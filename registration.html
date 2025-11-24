@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumine | Admin Management</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Laila:wght@500;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        saffron: { 50: '#fffbeb', 100: '#fef3c7', 500: '#f59e0b', 600: '#d97706', 700: '#b45309' },
+                        navy: { 800: '#012a4a', 900: '#0c1e35' },
+                        sand: '#fdfbf7',
+                    },
+                    fontFamily: { sans: ['Poppins', 'sans-serif'], serif: ['Laila', 'serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        .password-strength-meter div { height: 4px; border-radius: 2px; transition: all 0.3s; }
+        .hidden-tab { display: none; }
+    </style>
+</head>
+<body class="bg-sand text-gray-800 font-sans min-h-screen flex flex-col">
+
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-saffron-600 rounded text-white flex items-center justify-center"><i class="ph-fill ph-church"></i></div>
+                <h1 class="font-serif font-bold text-xl text-navy-800">Lumine <span class="text-xs text-saffron-600 uppercase tracking-wide font-sans">Admin</span></h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <span class="text-xs font-semibold text-green-600 bg-green-50 px-2 py-1 rounded border border-green-200">
+                    <i class="ph-fill ph-shield-check"></i> Super Admin
+                </span>
+                <button class="text-gray-500 hover:text-navy-800"><i class="ph ph-sign-out text-xl"></i></button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow p-6 max-w-7xl mx-auto w-full grid lg:grid-cols-12 gap-6">
+
+        <div class="lg:col-span-4 space-y-6">
+            
+            <div class="bg-white p-1 rounded-lg border border-gray-200 flex mb-2">
+                <button onclick="switchTab('admin')" id="tab-admin" class="flex-1 py-2 text-sm font-semibold rounded bg-navy-800 text-white shadow">Create Admin</button>
+                <button onclick="switchTab('user')" id="tab-user" class="flex-1 py-2 text-sm font-semibold rounded text-gray-500 hover:bg-gray-50">Add User</button>
+            </div>
+
+            <div id="form-admin" class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h2 class="font-serif font-bold text-lg text-navy-800 mb-4 flex items-center gap-2">
+                    <i class="ph-duotone ph-user-gear text-saffron-600"></i> New Admin Account
+                </h2>
+                <form id="createAdminForm" class="space-y-4" onsubmit="handleAdminCreate(event)">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Full Name</label>
+                        <input type="text" name="name" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-saffron-500 outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Email</label>
+                        <input type="email" name="email" id="adminEmail" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-saffron-500 outline-none text-sm" onblur="suggestUsername()">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Mobile</label>
+                            <input type="tel" name="mobile" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-saffron-500 outline-none text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Role</label>
+                            <select name="role" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-saffron-500 outline-none text-sm bg-white">
+                                <option value="mandir_admin">Mandir Admin</option>
+                                <option value="security_manager">Security Mgr</option>
+                                <option value="guard_manager">Guard Lead</option>
+                                <option value="super_admin" class="text-red-600">Super Admin</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Username</label>
+                        <input type="text" name="username" id="adminUsername" required class="w-full bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-600">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Password</label>
+                        <input type="password" id="newPassword" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-saffron-500 outline-none text-sm" onkeyup="checkStrength(this.value)">
+                        <div class="password-strength-meter flex gap-1 mt-2">
+                            <div id="meter-1" class="flex-1 bg-gray-200"></div>
+                            <div id="meter-2" class="flex-1 bg-gray-200"></div>
+                            <div id="meter-3" class="flex-1 bg-gray-200"></div>
+                        </div>
+                        <p class="text-[10px] text-gray-400 mt-1">Min 8 chars, symbols & numbers required.</p>
+                    </div>
+                    <div class="flex items-center justify-between py-2 border-t border-gray-100">
+                        <span class="text-sm font-medium text-gray-700">Enable 2FA</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" checked class="sr-only peer">
+                            <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-navy-800"></div>
+                        </label>
+                    </div>
+                    <button type="submit" class="w-full bg-saffron-600 hover:bg-saffron-700 text-white font-semibold py-2.5 rounded-lg shadow-md transition-all">Create Admin Account</button>
+                </form>
+            </div>
+
+            <div id="form-user" class="hidden-tab bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h2 class="font-serif font-bold text-lg text-navy-800 mb-4 flex items-center gap-2">
+                    <i class="ph-duotone ph-users-three text-blue-600"></i> Add User
+                </h2>
+                
+                <div class="mb-4">
+                    <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">User Type</label>
+                    <select id="userTypeSelect" onchange="toggleUserFields()" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-medium">
+                        <option value="devotee">Devotee (Pilgrim)</option>
+                        <option value="guard">Guard Team Member</option>
+                    </select>
+                </div>
+
+                <form id="createUserForm" class="space-y-4" onsubmit="handleUserCreate(event)">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Name</label>
+                        <input type="text" name="userName" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Mobile</label>
+                        <input type="tel" name="userMobile" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                    </div>
+
+                    <div id="devoteeFields" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Group Login?</label>
+                            <select name="isGroup" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                                <option value="no">No (Individual)</option>
+                                <option value="yes">Yes (Group Leader)</option>
+                            </select>
+                        </div>
+                        <div class="bg-blue-50 p-3 rounded border border-blue-100 text-xs text-blue-800">
+                            <i class="ph-fill ph-info"></i> Credentials will be sent via SMS/Email. Aadhaar verification link included.
+                        </div>
+                    </div>
+
+                    <div id="guardFields" class="hidden space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Assign Team</label>
+                            <select class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                                <option>Alpha Team (Gate 1)</option>
+                                <option>Bravo Team (Main Queue)</option>
+                                <option>Charlie Team (Parking)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Device ID (GPS)</label>
+                            <input type="text" placeholder="DEV-XXXX" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-navy-800 hover:bg-navy-900 text-white font-semibold py-2.5 rounded-lg shadow-md transition-all">Create User</button>
+                </form>
+            </div>
+
+        </div>
+
+        <div class="lg:col-span-8 space-y-6">
+            
+            <div class="grid grid-cols-3 gap-4">
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                    <div class="text-xs font-bold text-gray-400 uppercase">Total Admins</div>
+                    <div class="text-2xl font-serif font-bold text-navy-800">12</div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                    <div class="text-xs font-bold text-gray-400 uppercase">Active Guards</div>
+                    <div class="text-2xl font-serif font-bold text-saffron-600">45</div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                    <div class="text-xs font-bold text-gray-400 uppercase">Devotees (Today)</div>
+                    <div class="text-2xl font-serif font-bold text-green-600">842</div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                    <h3 class="font-serif font-bold text-gray-800">Administrator Accounts</h3>
+                    <div class="flex gap-2">
+                        <input type="text" placeholder="Search..." class="text-sm border rounded-lg px-2 py-1 outline-none focus:border-saffron-500">
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 text-xs uppercase text-gray-500 border-b border-gray-100">
+                                <th class="px-6 py-3 font-semibold">Name / Role</th>
+                                <th class="px-6 py-3 font-semibold">Username</th>
+                                <th class="px-6 py-3 font-semibold">Status</th>
+                                <th class="px-6 py-3 font-semibold">Last Login</th>
+                                <th class="px-6 py-3 font-semibold text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminTableBody" class="text-sm">
+                            </tbody>
+                    </table>
+                </div>
+                <div class="px-6 py-3 bg-gray-50 border-t border-gray-100 text-xs text-gray-500">
+                    <i class="ph-fill ph-lock-key"></i> All creation actions are logged to Audit Trail.
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <div id="otpModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 backdrop-blur-sm">
+        <div class="bg-white rounded-xl p-6 w-96 shadow-2xl transform transition-all scale-100">
+            <h3 class="font-serif font-bold text-xl mb-2 text-center">Verify Action</h3>
+            <p class="text-sm text-gray-500 text-center mb-4">Enter the OTP sent to Super Admin mobile.</p>
+            <div class="flex justify-center gap-2 mb-4">
+                <input type="text" class="w-10 h-10 border text-center rounded text-lg font-bold focus:ring-2 focus:ring-saffron-500" maxlength="1" value="5">
+                <input type="text" class="w-10 h-10 border text-center rounded text-lg font-bold focus:ring-2 focus:ring-saffron-500" maxlength="1" value="2">
+                <input type="text" class="w-10 h-10 border text-center rounded text-lg font-bold focus:ring-2 focus:ring-saffron-500" maxlength="1" value="9">
+                <input type="text" class="w-10 h-10 border text-center rounded text-lg font-bold focus:ring-2 focus:ring-saffron-500" maxlength="1" value="1">
+            </div>
+            <button onclick="confirmOTP()" class="w-full bg-navy-800 text-white py-2 rounded-lg font-semibold hover:bg-navy-900">Verify & Create</button>
+            <button onclick="closeModal('otpModal')" class="w-full mt-2 text-gray-500 text-sm hover:text-red-500">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Mock Data ---
+        const admins = [
+            { id: 1, name: 'Rajesh Kumar', role: 'super_admin', username: 'rajesh.k', status: 'Active', lastLogin: '2 mins ago' },
+            { id: 2, name: 'Anita Desai', role: 'mandir_admin', username: 'anita.d', status: 'Active', lastLogin: '1 day ago' },
+            { id: 3, name: 'Suresh Singh', role: 'security_manager', username: 'suresh.s', status: 'Suspended', lastLogin: '5 days ago' }
+        ];
+
+        // --- UI Logic ---
+        function switchTab(tab) {
+            document.getElementById('form-admin').classList.add('hidden-tab');
+            document.getElementById('form-user').classList.add('hidden-tab');
+            document.getElementById('tab-admin').classList.remove('bg-navy-800', 'text-white');
+            document.getElementById('tab-user').classList.remove('bg-navy-800', 'text-white');
+            
+            document.getElementById(`form-${tab}`).classList.remove('hidden-tab');
+            document.getElementById(`tab-${tab}`).classList.add('bg-navy-800', 'text-white');
+            
+            // Reset text colors for inactive
+            if(tab === 'admin') document.getElementById('tab-user').classList.add('text-gray-500');
+            else document.getElementById('tab-admin').classList.add('text-gray-500');
+        }
+
+        function toggleUserFields() {
+            const type = document.getElementById('userTypeSelect').value;
+            if(type === 'devotee') {
+                document.getElementById('devoteeFields').classList.remove('hidden');
+                document.getElementById('guardFields').classList.add('hidden');
+            } else {
+                document.getElementById('devoteeFields').classList.add('hidden');
+                document.getElementById('guardFields').classList.remove('hidden');
+            }
+        }
+
+        function suggestUsername() {
+            const email = document.getElementById('adminEmail').value;
+            if(email && email.includes('@')) {
+                document.getElementById('adminUsername').value = email.split('@')[0];
+            }
+        }
+
+        function checkStrength(password) {
+            const m1 = document.getElementById('meter-1');
+            const m2 = document.getElementById('meter-2');
+            const m3 = document.getElementById('meter-3');
+            
+            // Reset
+            [m1, m2, m3].forEach(m => m.className = 'flex-1 bg-gray-200');
+
+            if(password.length > 4) m1.className = 'flex-1 bg-red-500';
+            if(password.length > 8) m2.className = 'flex-1 bg-yellow-500';
+            if(password.length > 8 && /[0-9]/.test(password)) m3.className = 'flex-1 bg-green-500';
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('adminTableBody');
+            tbody.innerHTML = admins.map(admin => `
+                <tr class="border-b border-gray-50 hover:bg-orange-50/30 transition-colors group">
+                    <td class="px-6 py-4">
+                        <div class="font-medium text-navy-900">${admin.name}</div>
+                        <div class="text-xs text-gray-500 uppercase tracking-wide">${admin.role.replace('_', ' ')}</div>
+                    </td>
+                    <td class="px-6 py-4 text-gray-600 font-mono text-xs">@${admin.username}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 py-1 rounded text-xs font-semibold ${admin.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
+                            ${admin.status}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-gray-500">${admin.lastLogin}</td>
+                    <td class="px-6 py-4 text-right">
+                        <button class="text-gray-400 hover:text-navy-800 mx-1"><i class="ph-bold ph-pencil-simple"></i></button>
+                        <button class="text-gray-400 hover:text-red-600 mx-1"><i class="ph-bold ph-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // --- Mock API Handlers ---
+        function handleAdminCreate(e) {
+            e.preventDefault();
+            // Open OTP Modal to simulate security check
+            document.getElementById('otpModal').classList.remove('hidden');
+            document.getElementById('otpModal').classList.add('flex');
+        }
+
+        function confirmOTP() {
+            // Simulate Success
+            closeModal('otpModal');
+            const form = document.getElementById('createAdminForm');
+            const newAdmin = {
+                id: admins.length + 1,
+                name: form.name.value,
+                role: form.role.value,
+                username: form.username.value,
+                status: 'Active',
+                lastLogin: 'Never'
+            };
+            admins.unshift(newAdmin);
+            renderTable();
+            form.reset();
+            alert("✅ Admin Account Created & Email sent.");
+        }
+
+        function handleUserCreate(e) {
+            e.preventDefault();
+            // Simulate API call
+            const btn = e.target.querySelector('button');
+            const originalText = btn.innerText;
+            btn.innerText = "Creating...";
+            
+            setTimeout(() => {
+                alert("✅ User Created Successfully! Login details sent via SMS.");
+                btn.innerText = originalText;
+                e.target.reset();
+            }, 1000);
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+            document.getElementById(id).classList.remove('flex');
+        }
+
+        // Init
+        renderTable();
+    </script>
+</body>
+</html>

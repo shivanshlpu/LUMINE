@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumine | Somnath Mandir</title>
+    
+    <!-- Fonts: Poppins (Body) & Laila (Headings/Accents) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Laila:wght@500;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Custom Lumine Styles -->
+    <style>
+        :root {
+            --primary: #D97706; /* Darker Saffron matching image */
+            --primary-light: #F59E0B;
+            --brand-blue: #0F2940; /* Dark Navy from image */
+            --bg-body: #F8F9FA;
+            --surface: #FFFFFF;
+            --text-main: #1A202C;
+            --border-radius: 12px;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .brand-font { font-family: 'Laila', serif; }
+
+        /* Navbar Specifics */
+        .nav-btn {
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--brand-blue);
+            border-radius: 9999px; /* Pill shape */
+            transition: all 0.2s ease;
+        }
+
+        .nav-btn:hover {
+            background-color: #FFF7ED;
+            color: var(--primary);
+        }
+
+        .nav-btn.active {
+            background-color: var(--primary);
+            color: white;
+            box-shadow: 0 2px 4px rgba(217, 119, 6, 0.3);
+        }
+
+        /* Page Transitions */
+        .page-section {
+            display: none;
+            height: 100%;
+            overflow-y: auto;
+            padding: 24px;
+            animation: fadeIn 0.3s ease-out;
+        }
+        .page-section.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Lane Card Styles (Original) */
+        .lane-card {
+            background: var(--surface);
+            border: 1px solid #E2E8F0;
+            border-radius: var(--border-radius);
+            transition: all 0.2s ease;
+        }
+        .lane-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.08); border-color: var(--primary); }
+        .lane-card.stuck { border: 2px solid #E53E3E; background: #FFF5F5; }
+        .lane-card.closed { opacity: 0.7; background: #EDF2F7; border-style: dashed; }
+        .sparkline { fill: none; stroke-width: 2; stroke-linecap: round; }
+
+        /* Badges */
+        .badge { padding: 4px 10px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+        .badge-open { background: #C6F6D5; color: #22543D; }
+        .badge-busy { background: #FEFCBF; color: #744210; }
+        .badge-closed { background: #CBD5E0; color: #2D3748; }
+        .badge-stuck { background: #FED7D7; color: #822727; animation: pulse-red 2s infinite; }
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(229, 62, 62, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(229, 62, 62, 0); } 100% { box-shadow: 0 0 0 0 rgba(229, 62, 62, 0); } }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background-color: #CBD5E0; border-radius: 20px; }
+
+        .modal-overlay { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px); }
+
+        /* Status Control Buttons */
+        .status-btn {
+            font-size: 0.7rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+        .status-btn:hover { transform: scale(1.05); }
+        .status-btn.active { box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); border-color: rgba(0,0,0,0.1); }
+        
+        .btn-open { background: #F0FFF4; color: #276749; }
+        .btn-open.active { background: #C6F6D5; border-color: #48BB78; }
+        
+        .btn-busy { background: #FFFAF0; color: #9C4221; }
+        .btn-busy.active { background: #FEEBC8; border-color: #ED8936; }
+        
+        .btn-close { background: #F7FAFC; color: #4A5568; }
+        .btn-close.active { background: #CBD5E0; border-color: #A0AEC0; }
+
+    </style>
+</head>
+<body>
+
+    <!-- 1. Navbar (Matching Uploaded Image) -->
+    <nav class="bg-white px-8 py-4 shadow-sm flex items-center justify-between shrink-0 z-30 relative">
+        <!-- Logo Section -->
+        <a href="admindashboard.html" class="flex items-center gap-3 cursor-pointer hover:no-underline">
+            <div class="w-10 h-10 bg-[var(--primary)] rounded-lg flex items-center justify-center text-white shadow-md">
+                <i class="fas fa-gopuram text-xl"></i>
+            </div>
+            <div class="flex flex-col justify-center">
+                <h1 class="text-[var(--brand-blue)] font-bold text-xl leading-none brand-font">Lumine</h1>
+                <span class="text-[var(--primary)] text-[10px] font-bold tracking-widest uppercase mt-0.5">Somnath Mandir</span>
+            </div>
+        </a>
+
+        <!-- Navigation Menu -->
+        <div class="hidden md:flex items-center gap-1 bg-white p-1">
+            <a href="admindashboard.html" class="nav-btn hover:no-underline flex items-center justify-center">Dashboard</a>
+            <a href="heatmap.html" class="nav-btn hover:no-underline flex items-center justify-center">Live Heatmap</a>
+            <a href="guard.html" class="nav-btn hover:no-underline flex items-center justify-center">Guard Teams</a>
+            <a href="lane.html" class="nav-btn active hover:no-underline flex items-center justify-center">Lane Control</a>
+            <a href="settings.html" class="nav-btn hover:no-underline flex items-center justify-center">Settings</a>
+        </div>
+
+        <!-- User Profile -->
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-orange-100 text-[var(--primary)] font-bold flex items-center justify-center border border-orange-200 cursor-pointer hover:bg-orange-200 transition">
+                A
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Accent Line under Navbar -->
+    <div class="h-1 w-full bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] shrink-0"></div>
+
+    <!-- 2. Main Content Container -->
+    <main class="flex-1 overflow-hidden relative bg-[#F8FAFC]">
+
+        <!-- PAGE: LANE CONTROL (Default Active) -->
+        <div id="page-lanes" class="page-section active">
+            <!-- Header for Lane Page -->
+            <div class="flex justify-between items-end mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold brand-font text-gray-800">Lane Status Overview</h2>
+                    <p class="text-sm text-gray-500 mt-1">
+                        Control lane availability and view live occupancy.
+                        <span class="inline-block bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs font-bold ml-2 border border-blue-100">Logic: 5 Heads = 1 Unit</span>
+                    </p>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="simulateJam()" class="bg-red-50 text-red-600 px-4 py-2 rounded-lg text-xs font-bold border border-red-200 hover:bg-red-100 transition shadow-sm">
+                        <i class="fas fa-bug mr-1"></i> Sim Jam (L-3)
+                    </button>
+                    <div class="text-right bg-white p-2 rounded-lg border border-gray-200 shadow-sm px-4">
+                        <p class="text-[10px] text-gray-400 uppercase tracking-wide">Total Effective Capacity</p>
+                        <p class="text-xl font-bold text-[var(--primary)]" id="total-capacity-display">0 / 2400</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grid for Lanes -->
+            <div id="lane-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
+                <!-- Cards Injected via JS -->
+            </div>
+        </div>
+
+        <!-- PAGE: DASHBOARD (Placeholder) -->
+        <div id="page-dashboard" class="page-section">
+            <h2 class="text-2xl font-bold brand-font text-gray-800 mb-6">Temple Overview Dashboard</h2>
+            <div class="grid grid-cols-3 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                    <div class="text-gray-500 text-sm">Total Footfall (Today)</div>
+                    <div class="text-3xl font-bold text-gray-800 mt-2">12,450</div>
+                    <div class="text-green-500 text-xs mt-1"><i class="fas fa-arrow-up"></i> 12% vs yesterday</div>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                    <div class="text-gray-500 text-sm">Avg Wait Time</div>
+                    <div class="text-3xl font-bold text-[var(--primary)] mt-2">18 min</div>
+                    <div class="text-gray-400 text-xs mt-1">Optimal range: 15-20m</div>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                    <div class="text-gray-500 text-sm">Security Alerts</div>
+                    <div class="text-3xl font-bold text-green-600 mt-2">0</div>
+                    <div class="text-gray-400 text-xs mt-1">System healthy</div>
+                </div>
+            </div>
+            <div class="bg-white p-8 rounded-xl border border-gray-200 flex flex-col items-center justify-center text-gray-400 h-64 border-dashed border-2">
+                <i class="fas fa-chart-line text-4xl mb-2"></i>
+                <p>Advanced Analytics Charts will load here</p>
+            </div>
+        </div>
+
+        <!-- PAGE: HEATMAP (Placeholder) -->
+        <div id="page-heatmap" class="page-section">
+            <h2 class="text-2xl font-bold brand-font text-gray-800 mb-6">Live Crowd Heatmap</h2>
+            <div class="bg-gray-800 rounded-xl w-full h-[500px] relative overflow-hidden flex items-center justify-center group">
+                 <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1590053123567-9366e6327339?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80')] bg-cover bg-center opacity-40"></div>
+                 <div class="z-10 text-center">
+                    <div class="w-16 h-16 border-4 border-t-[var(--primary)] border-white/20 rounded-full animate-spin mx-auto mb-4"></div>
+                    <p class="text-white font-mono">Initializing Thermal Overlay...</p>
+                 </div>
+            </div>
+        </div>
+
+        <!-- PAGE: GUARDS (Placeholder) -->
+        <div id="page-guards" class="page-section">
+            <h2 class="text-2xl font-bold brand-font text-gray-800 mb-6">Security Team Status</h2>
+            <div class="space-y-4 max-w-3xl">
+                <!-- Team A -->
+                <div class="bg-white p-4 rounded-xl border border-gray-200 flex items-center justify-between shadow-sm">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-bold">A1</div>
+                        <div>
+                            <h3 class="font-bold">Alpha Team</h3>
+                            <p class="text-xs text-gray-500">Zone: Main Gate • 4 Personnel</p>
+                        </div>
+                    </div>
+                    <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">Active / Patrolling</span>
+                </div>
+                <!-- Team B -->
+                <div class="bg-white p-4 rounded-xl border border-gray-200 flex items-center justify-between shadow-sm">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center text-[var(--primary)] font-bold">B2</div>
+                        <div>
+                            <h3 class="font-bold">Beta Team</h3>
+                            <p class="text-xs text-gray-500">Zone: Lane 1-4 • 3 Personnel</p>
+                        </div>
+                    </div>
+                    <span class="px-3 py-1 bg-orange-100 text-orange-700 text-xs font-bold rounded-full">Assigned to L-3</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE: SETTINGS (Placeholder) -->
+        <div id="page-settings" class="page-section">
+            <h2 class="text-2xl font-bold brand-font text-gray-800 mb-6">System Configuration</h2>
+            <div class="bg-white p-6 rounded-xl border border-gray-200 max-w-2xl">
+                <div class="flex items-center justify-between py-4 border-b border-gray-100">
+                    <div>
+                        <h4 class="font-bold text-gray-700">Stuck Lane Threshold</h4>
+                        <p class="text-xs text-gray-500">Time without movement before alert</p>
+                    </div>
+                    <select class="bg-gray-50 border border-gray-300 rounded px-2 py-1 text-sm">
+                        <option>5 Minutes</option>
+                        <option selected>8 Minutes</option>
+                        <option>10 Minutes</option>
+                    </select>
+                </div>
+                <div class="flex items-center justify-between py-4 border-b border-gray-100">
+                    <div>
+                        <h4 class="font-bold text-gray-700">Head Count Ratio</h4>
+                        <p class="text-xs text-gray-500">Raw detection calibration</p>
+                    </div>
+                    <div class="text-sm font-bold text-[var(--primary)]">5 : 1 (Active)</div>
+                </div>
+                <div class="flex items-center justify-between py-4">
+                    <div>
+                        <h4 class="font-bold text-gray-700">Dark Mode</h4>
+                        <p class="text-xs text-gray-500">Toggle admin dashboard theme</p>
+                    </div>
+                    <div class="w-10 h-6 bg-gray-200 rounded-full relative cursor-pointer"><div class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm"></div></div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modals (Overlay) -->
+    <!-- Guard Assignment Modal -->
+    <div id="guard-modal" class="fixed inset-0 modal-overlay hidden z-50 flex items-center justify-center opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform scale-95 transition-transform duration-300">
+            <div class="bg-gray-50 p-4 border-b border-gray-100 flex justify-between items-center">
+                <h3 class="font-bold brand-font text-lg">Assign Guard Team</h3>
+                <button onclick="closeModal('guard-modal')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div class="p-6">
+                <p class="text-sm text-gray-600 mb-4">Select available team for <strong id="modal-lane-name">Lane X</strong>.</p>
+                <div class="space-y-3" id="team-list"></div>
+            </div>
+            <div class="p-4 bg-gray-50 flex justify-end gap-3">
+                <button onclick="closeModal('guard-modal')" class="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
+                <button onclick="confirmAssignment()" class="px-4 py-2 text-sm font-medium text-white bg-[var(--primary)] hover:bg-orange-600 rounded-lg shadow-md transition">Dispatch</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Camera Modal -->
+    <div id="cam-modal" class="fixed inset-0 modal-overlay hidden z-50 flex items-center justify-center">
+        <div class="bg-black rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden">
+            <div class="flex justify-between items-center p-3 bg-gray-900 text-white">
+                <span class="text-sm font-mono flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span> 
+                    LIVE FEED | <span id="cam-modal-title">CAM-01</span>
+                </span>
+                <button onclick="closeModal('cam-modal')" class="text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="aspect-video bg-gray-800 relative flex items-center justify-center overflow-hidden group">
+                <!-- Live Cam BG -->
+                <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1509909756405-be0199881695?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80')] bg-cover bg-center opacity-60 grayscale group-hover:grayscale-0 transition duration-500"></div>
+                
+                <!-- Live Overlay Info -->
+                <div class="text-center z-10 pointer-events-none">
+                    <i class="fas fa-video text-5xl text-white/50 mb-2 animate-bounce"></i>
+                    <p class="text-white/90 text-sm font-mono bg-black/50 px-2 rounded">Live Stream Active</p>
+                </div>
+                
+                <div class="absolute top-4 left-4 text-xs font-mono text-green-400 bg-black/60 p-2 rounded border border-green-900/50">
+                    <div>OBJ_DET: <span id="cam-live-obj">142</span></div>
+                    <div>FPS: <span id="cam-live-fps">24</span></div>
+                </div>
+                <div class="absolute bottom-4 right-4 text-xs font-mono text-white bg-black/60 p-2 rounded">
+                    TS: <span id="cam-live-ts">--:--:--</span>
+                </div>
+            </div>
+            <div class="bg-gray-900 p-4 grid grid-cols-3 gap-4 border-t border-gray-800">
+                <div class="text-center">
+                    <div class="text-gray-500 text-xs uppercase">Raw Heads</div>
+                    <div class="text-white font-mono text-xl" id="cam-raw-count">0</div>
+                </div>
+                <div class="text-center border-l border-gray-700">
+                    <div class="text-gray-500 text-xs uppercase">Processed (1:5)</div>
+                    <div class="text-[var(--primary)] font-mono text-xl font-bold" id="cam-proc-count">0</div>
+                </div>
+                <div class="text-center border-l border-gray-700">
+                    <div class="text-gray-500 text-xs uppercase">Status</div>
+                    <div class="text-green-400 font-mono text-sm font-bold mt-1" id="cam-status-text">ONLINE</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-[100] flex flex-col gap-3"></div>
+
+    <script>
+        // --- PAGE NAVIGATION LOGIC ---
+        // Note: switchPage function is kept for internal section switching if needed, 
+        // but Navbar now uses direct href links for multi-page architecture.
+        function switchPage(pageId) {
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            // Since links reload page, this JS only affects current page interaction if used
+            const btn = document.getElementById(`nav-${pageId}`);
+            if(btn) btn.classList.add('active');
+            
+            document.querySelectorAll('.page-section').forEach(section => section.classList.remove('active'));
+            const section = document.getElementById(`page-${pageId}`);
+            if(section) section.classList.add('active');
+        }
+
+        // --- LANE CONTROL LOGIC ---
+        
+        let lanesData = Array.from({ length: 8 }, (_, i) => ({
+            id: i + 1,
+            name: `Lane ${i + 1}`,
+            camId: `CAM-0${i + 1}`,
+            location: { lat: 20.8880 + (i*0.0001), lng: 70.4010 + (i*0.0001) },
+            rawHeadCount: 250 + Math.floor(Math.random() * 250), 
+            capacity: 300, 
+            throughput: 12 + Math.floor(Math.random() * 10),
+            lastMove: Date.now(),
+            status: 'OPEN', // Default
+            manualOverride: false, // Flag for manual control
+            temp: 30 + Math.floor(Math.random() * 5),
+            humidity: 60 + Math.floor(Math.random() * 15),
+            history: Array(15).fill(10).map(() => Math.floor(Math.random() * 20)),
+            isJammed: false
+        }));
+
+        let activeLaneIdForModal = null;
+        let activeCamInterval = null;
+
+        function getStatusColor(status, percentage) {
+            if (status === 'STUCK') return '#E53E3E'; // Red
+            if (status === 'CLOSED') return '#718096'; // Gray
+            if (status === 'BUSY') return '#DD6B20'; // Orange
+            if (percentage > 85) return '#E53E3E';
+            if (percentage > 60) return '#DD6B20'; 
+            if (percentage > 20) return '#F59E0B'; 
+            return '#38A169'; // Green
+        }
+
+        function generateSparkline(data) {
+            const min = Math.min(...data);
+            const max = Math.max(...data);
+            const range = max - min || 1;
+            const width = 80;
+            const height = 30;
+            const points = data.map((val, i) => {
+                const x = (i / (data.length - 1)) * width;
+                const y = height - ((val - min) / range) * height;
+                return `${x},${y}`;
+            }).join(' ');
+            return `<svg width="${width}" height="${height}" class="sparkline overflow-visible"><polyline points="${points}" fill="none" stroke="currentColor" stroke-width="1.5" stroke-opacity="0.6"/></svg>`;
+        }
+
+        function setLaneStatus(id, newStatus) {
+            const lane = lanesData.find(l => l.id === id);
+            if (!lane) return;
+
+            lane.status = newStatus;
+            lane.manualOverride = true; // Stop auto-logic from overwriting
+            
+            // If opening, remove override flag to allow auto-updates again? 
+            // Or keep it overridden? Let's keep it sticky unless 'OPEN' implies auto.
+            // For now, let's say 'OPEN' puts it back in auto mode.
+            if(newStatus === 'OPEN') {
+                lane.manualOverride = false;
+                showToast(`${lane.name} is set to AUTO/OPEN`, 'success');
+            } else {
+                showToast(`${lane.name} marked as ${newStatus}`, 'warning');
+            }
+            renderCards();
+        }
+
+        function renderCards() {
+            const grid = document.getElementById('lane-grid');
+            if (!grid) return; 
+            grid.innerHTML = '';
+            
+            let totalEffective = 0;
+
+            lanesData.forEach(lane => {
+                const effectiveCount = Math.ceil(lane.rawHeadCount / 5);
+                totalEffective += effectiveCount;
+                const percentage = Math.round((effectiveCount / lane.capacity) * 100);
+                const colorHex = getStatusColor(lane.status, percentage);
+                
+                let statusClass = 'badge-open';
+                let cardClass = '';
+                let statusText = lane.status;
+                let strokeColor = '#38A169'; 
+
+                if(lane.status === 'STUCK') {
+                    statusClass = 'badge-stuck'; cardClass = 'stuck'; strokeColor = '#E53E3E'; statusText = '⚠️ STUCK';
+                } else if(lane.status === 'BUSY') {
+                    statusClass = 'badge-busy'; statusText = 'BUSY'; strokeColor = '#DD6B20';
+                } else if(lane.status === 'CLOSED') {
+                    statusClass = 'badge-closed'; cardClass = 'closed'; strokeColor = '#CBD5E0'; statusText = 'CLOSED';
+                } else if(percentage > 85) {
+                    statusClass = 'bg-red-100 text-red-800'; statusText = 'CRITICAL'; strokeColor = '#E53E3E';
+                } else if (percentage > 60) {
+                    statusClass = 'bg-orange-100 text-orange-800'; statusText = 'HEAVY'; strokeColor = '#DD6B20';
+                }
+
+                const cardHTML = `
+                <div id="lane-card-${lane.id}" class="lane-card ${cardClass} p-5 h-full flex flex-col">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 font-bold text-lg border border-gray-100 shadow-sm">
+                                ${lane.id}
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-lg leading-none text-gray-800">${lane.name}</h3>
+                                <div class="text-[10px] text-gray-400 font-mono mt-1">
+                                    <i class="fas fa-map-marker-alt"></i> ${lane.location.lat.toFixed(4)}, ${lane.location.lng.toFixed(4)}
+                                </div>
+                            </div>
+                        </div>
+                        <span class="badge ${statusClass}">${statusText}</span>
+                    </div>
+
+                    <!-- Manual Controls -->
+                    <div class="flex gap-1 mb-4 bg-gray-50 p-1 rounded-md justify-between">
+                        <button onclick="setLaneStatus(${lane.id}, 'OPEN')" class="status-btn btn-open ${!lane.manualOverride || lane.status === 'OPEN' ? 'active' : ''} flex-1">OPEN</button>
+                        <button onclick="setLaneStatus(${lane.id}, 'BUSY')" class="status-btn btn-busy ${lane.status === 'BUSY' ? 'active' : ''} flex-1">BUSY</button>
+                        <button onclick="setLaneStatus(${lane.id}, 'CLOSED')" class="status-btn btn-close ${lane.status === 'CLOSED' ? 'active' : ''} flex-1">BLOCK</button>
+                    </div>
+
+                    <div class="bg-gray-50 rounded-lg p-3 border border-gray-100 mb-4">
+                        <div class="flex justify-between items-end mb-1">
+                            <span class="text-xs text-gray-500 uppercase font-semibold">Effective Count</span>
+                            <span class="text-[10px] text-[var(--primary)] font-bold">Cap: ${percentage}%</span>
+                        </div>
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-3xl font-bold text-gray-800">${effectiveCount}</span>
+                            <span class="text-xs text-gray-400 font-medium">/ ${lane.capacity}</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-1.5 mt-2 overflow-hidden">
+                            <div class="h-1.5 rounded-full transition-all duration-500" style="width: ${Math.min(percentage, 100)}%; background-color: ${colorHex}"></div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center mb-4 mt-auto">
+                        <div>
+                            <div class="text-[10px] text-gray-400 uppercase">Throughput</div>
+                            <div class="font-bold text-gray-700">${lane.throughput} <span class="text-[10px] font-normal">/min</span></div>
+                        </div>
+                        <div class="text-[var(--text-muted)]" style="color:${strokeColor}">
+                            ${generateSparkline(lane.history)}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="openLiveCam(${lane.id})" class="flex items-center justify-center gap-1 py-2 rounded bg-gray-800 text-white text-xs font-medium hover:bg-black transition shadow-lg ring-1 ring-white/10">
+                            <i class="fas fa-video animate-pulse text-red-400"></i> LIVE CAM
+                        </button>
+                         <button onclick="openGuardModal(${lane.id})" class="flex items-center justify-center gap-1 py-2 rounded border border-gray-300 text-gray-700 text-xs font-medium hover:bg-gray-50 hover:text-[var(--primary)] transition">
+                            <i class="fas fa-user-shield"></i> Assign
+                        </button>
+                    </div>
+                </div>
+                `;
+                grid.innerHTML += cardHTML;
+            });
+            const capDisplay = document.getElementById('total-capacity-display');
+            if(capDisplay) capDisplay.innerText = `${totalEffective} / ${lanesData.length * 300}`;
+        }
+
+        // --- SIMULATION LOOP ---
+        setInterval(() => {
+            lanesData.forEach(lane => {
+                if (lane.status === 'CLOSED') {
+                    // Reduce count slowly if closed
+                    if(lane.rawHeadCount > 0) lane.rawHeadCount -= Math.floor(Math.random() * 5);
+                    lane.throughput = 0;
+                    return;
+                }
+
+                const change = Math.floor(Math.random() * 25) - 10; 
+                if (lane.id === 3 && lane.isJammed) {
+                    lane.rawHeadCount += 15;
+                    lane.throughput = 0;
+                    if ((lane.rawHeadCount / 5) > 50 && !lane.manualOverride) lane.status = 'STUCK';
+                } else {
+                    lane.rawHeadCount = Math.max(0, lane.rawHeadCount + change);
+                    lane.throughput = Math.max(0, 12 + Math.floor(Math.random() * 8) - 4);
+                    
+                    // Auto-resolve stuck unless manual
+                    if(lane.status === 'STUCK' && !lane.isJammed && !lane.manualOverride) lane.status = 'OPEN';
+                }
+                lane.history.shift();
+                lane.history.push(lane.throughput);
+            });
+            renderCards();
+        }, 2000);
+
+        // --- MODALS & UTILS ---
+        
+        function openLiveCam(id) {
+            const lane = lanesData.find(l => l.id === id);
+            document.getElementById('cam-modal-title').innerText = `${lane.camId} (${lane.name})`;
+            document.getElementById('cam-raw-count').innerText = lane.rawHeadCount;
+            document.getElementById('cam-proc-count').innerText = Math.ceil(lane.rawHeadCount/5);
+            document.getElementById('cam-modal').classList.remove('hidden');
+
+            // Start Live Updates for Modal
+            if(activeCamInterval) clearInterval(activeCamInterval);
+            activeCamInterval = setInterval(() => {
+                const now = new Date();
+                document.getElementById('cam-live-ts').innerText = now.toLocaleTimeString();
+                document.getElementById('cam-live-fps').innerText = 20 + Math.floor(Math.random() * 5);
+                document.getElementById('cam-live-obj').innerText = lane.rawHeadCount;
+                document.getElementById('cam-raw-count').innerText = lane.rawHeadCount;
+                document.getElementById('cam-proc-count').innerText = Math.ceil(lane.rawHeadCount/5);
+            }, 1000);
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('opacity-0');
+            setTimeout(() => document.getElementById(id).classList.add('hidden'), 300);
+            if(id === 'cam-modal' && activeCamInterval) clearInterval(activeCamInterval);
+        }
+
+        // ... [Existing code for guard modal & toast] ...
+        function openGuardModal(laneId) {
+            activeLaneIdForModal = laneId;
+            const lane = lanesData.find(l => l.id === laneId);
+            document.getElementById('modal-lane-name').innerText = lane.name;
+            const teamsHTML = `
+                <div class="flex items-center justify-between p-3 border border-orange-200 bg-orange-50 rounded-lg cursor-pointer hover:bg-orange-100 transition">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-white p-2 rounded-full shadow-sm text-[var(--primary)] font-bold">A1</div>
+                        <div>
+                            <div class="font-bold text-sm text-gray-800">Alpha Team</div>
+                            <div class="text-xs text-gray-500">2 Guards • <span class="text-green-600">Idle</span></div>
+                        </div>
+                    </div>
+                    <div class="text-xs font-bold text-gray-700">~2m ETA</div>
+                </div>
+            `;
+            document.getElementById('team-list').innerHTML = teamsHTML;
+            document.getElementById('guard-modal').classList.remove('hidden', 'opacity-0');
+        }
+
+        function confirmAssignment() {
+            closeModal('guard-modal');
+            const lane = lanesData.find(l => l.id === activeLaneIdForModal);
+            showToast(`Alpha Team dispatched to ${lane.name}`, 'success');
+        }
+
+        function simulateJam() {
+            const lane = lanesData.find(l => l.id === 3);
+            if(lane) { lane.isJammed = true; lane.rawHeadCount = 1200; lane.throughput = 0; showToast("Simulating Jam on Lane 3...", "warning"); renderCards(); }
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'bg-white border-l-4 p-4 rounded shadow-lg flex items-center gap-3 transform transition-all duration-300 translate-x-full';
+            let color = type === 'success' ? '#38A169' : (type === 'warning' ? '#DD6B20' : '#D97706');
+            let icon = type === 'success' ? 'fa-check-circle' : 'fa-info-circle';
+            toast.style.borderLeftColor = color;
+            toast.innerHTML = `<i class="fas ${icon}" style="color:${color}"></i><span class="text-sm font-medium text-gray-700">${message}</span>`;
+            container.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.remove('translate-x-full'));
+            setTimeout(() => { toast.classList.add('translate-x-full', 'opacity-0'); setTimeout(() => toast.remove(), 300); }, 3000);
+        }
+
+        renderCards();
+    </script>
+</body>
+</html>

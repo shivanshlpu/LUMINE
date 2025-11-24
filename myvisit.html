@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Visits | Lumine Devotee Portal</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Laila:wght@500;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        saffron: { 50: '#fffbeb', 100: '#fef3c7', 500: '#f59e0b', 600: '#d97706', 700: '#b45309' },
+                        navy: { 800: '#012a4a', 900: '#0c1e35' },
+                        sand: '#fdfbf7',
+                    },
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                        serif: ['Laila', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .tab-active { border-bottom: 3px solid #d97706; color: #d97706; font-weight: 600; }
+        .tab-inactive { border-bottom: 3px solid transparent; color: #6b7280; }
+        
+        /* Sidebar Link Styles */
+        .nav-link { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 8px; color: #4b5563; font-weight: 500; transition: all 0.2s; margin-bottom: 4px; }
+        .nav-link:hover { background-color: #fff7ed; color: #d97706; }
+        .nav-link.active { background-color: #012a4a; color: white; }
+    </style>
+</head>
+<body class="bg-sand font-sans text-gray-800 flex h-screen overflow-hidden">
+
+    <aside class="w-64 bg-white border-r border-gray-200 flex-shrink-0 flex flex-col h-full z-20">
+        <div class="h-20 flex items-center px-6 border-b border-gray-100">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-saffron-600 rounded text-white flex items-center justify-center shadow-md">
+                    <i class="ph-fill ph-om text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-serif font-bold text-lg text-navy-800 leading-tight">LUNIME</h1>
+                    <p class="text-[10px] text-saffron-600 font-semibold tracking-wider">DEVOTEE SERVICES</p>
+                </div>
+            </div>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto p-4 space-y-1">
+            <a href="dashboard.html" class="nav-link">
+                <i class="ph ph-squares-four text-xl"></i> Dashboard
+            </a>
+            <a href="bookingslot.html" class="nav-link">
+                <i class="ph ph-calendar-plus text-xl"></i> Slot Booking
+            </a>
+            <a href="#" class="nav-link active">
+                <i class="ph ph-clock-counter-clockwise text-xl"></i> My Visits
+            </a>
+            <a href="#" class="nav-link">
+                <i class="ph ph-chart-bar text-xl"></i> Lane Status
+            </a>
+            <div class="my-4 border-t border-gray-100"></div>
+            <a href="#" class="nav-link">
+                <i class="ph ph-bell text-xl"></i> Admin Notices
+            </a>
+            <a href="#" class="nav-link">
+                <i class="ph ph-qr-code text-xl"></i> Devotee QR ID
+            </a>
+            
+            <div class="mt-8">
+                <a href="#" class="nav-link text-red-500 hover:bg-red-50 hover:text-red-600">
+                    <i class="ph ph-warning-circle text-xl"></i> Emergency SOS
+                </a>
+            </div>
+        </nav>
+
+        <div class="p-4 border-t border-gray-100">
+            <a href="#" class="nav-link">
+                <i class="ph ph-headset text-xl"></i> Support
+            </a>
+            <a href="index.html" class="nav-link">
+                <i class="ph ph-sign-out text-xl"></i> Logout
+            </a>
+        </div>
+    </aside>
+
+    <div class="flex-1 flex flex-col h-full overflow-hidden relative">
+        
+        <header class="h-20 bg-white/80 backdrop-blur-md border-b border-gray-200 flex items-center justify-between px-8 flex-shrink-0 z-10">
+            <div>
+                <h2 class="font-serif text-2xl font-bold text-navy-800">My Activity</h2>
+                <p class="text-xs text-gray-500">History of your spiritual journeys.</p>
+            </div>
+            
+            <div class="flex items-center gap-6">
+                <div class="text-right hidden md:block">
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Today</p>
+                    <p class="text-sm font-semibold text-saffron-600">Mon, 24 Nov</p>
+                </div>
+                <div class="flex items-center gap-3 pl-6 border-l border-gray-200">
+                    <div class="text-right">
+                        <p class="text-sm font-bold text-navy-800">Shivansh</p>
+                        <p class="text-xs text-gray-500">BK-853672</p>
+                    </div>
+                    <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-navy-800 font-serif font-bold text-lg">S</div>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-1 overflow-y-auto p-8">
+            
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-1 inline-flex mb-8">
+                <button onclick="switchTab('upcoming')" id="tab-upcoming" class="px-6 py-2.5 rounded-lg text-sm font-semibold transition-all bg-navy-800 text-white shadow-md">
+                    Upcoming Visits
+                </button>
+                <button onclick="switchTab('completed')" id="tab-completed" class="px-6 py-2.5 rounded-lg text-sm font-semibold text-gray-500 hover:text-navy-800 transition-all">
+                    Completed History
+                </button>
+            </div>
+
+            <div id="section-upcoming" class="animate-fade-in max-w-4xl">
+                </div>
+
+            <div id="section-completed" class="hidden animate-fade-in max-w-4xl space-y-4">
+                </div>
+
+        </main>
+    </div>
+
+    <div id="detailsModal" class="fixed inset-0 bg-black/40 z-50 hidden items-center justify-center backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl transform transition-all scale-100">
+            <div class="bg-navy-800 p-4 text-white flex justify-between items-center">
+                <h3 class="font-serif font-bold">Booking Details</h3>
+                <button onclick="closeModal()" class="hover:bg-white/10 rounded p-1"><i class="ph ph-x text-lg"></i></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div class="text-center pb-4 border-b border-gray-100">
+                    <div class="text-xs text-gray-500 uppercase tracking-wide">Booking ID</div>
+                    <div class="text-xl font-mono font-bold text-navy-800 tracking-wider" id="modal-id">---</div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <span class="text-gray-500 block text-xs">Date</span>
+                        <span class="font-semibold text-gray-800" id="modal-date">---</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500 block text-xs">Slot</span>
+                        <span class="font-semibold text-gray-800" id="modal-slot">---</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500 block text-xs">Members</span>
+                        <span class="font-semibold text-gray-800" id="modal-members">---</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500 block text-xs">Status</span>
+                        <span class="inline-block px-2 py-0.5 rounded text-xs font-bold" id="modal-status">---</span>
+                    </div>
+                </div>
+                <div class="bg-orange-50 p-3 rounded-lg border border-orange-100 flex gap-2 items-start mt-2">
+                    <i class="ph-fill ph-info text-saffron-600 mt-0.5"></i>
+                    <p class="text-xs text-gray-600">Please carry a valid Govt ID (Aadhaar) for all members during the visit.</p>
+                </div>
+            </div>
+            <div class="p-4 bg-gray-50 border-t border-gray-100">
+                <button onclick="closeModal()" class="w-full bg-navy-800 text-white py-2.5 rounded-lg font-semibold shadow-md hover:bg-navy-900 transition-colors">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA: Matching your Dashboard Screenshot ---
+        const bookings = [
+            {
+                id: "BK-853672",  // Match
+                type: "upcoming",
+                date: "2025-11-24", // Match
+                day: "24",
+                month: "Nov",
+                slot: "06:00 AM - 08:00 AM", // Match
+                members: 1, // "1 Person(s)"
+                status: "Confirmed"
+            },
+            {
+                id: "BK-102938",
+                type: "completed",
+                date: "2025-10-15",
+                day: "15",
+                month: "Oct",
+                slot: "08:00 AM - 09:00 AM",
+                members: 3,
+                checkInTime: "08:12 AM",
+                method: "Face ID",
+                verified: true
+            },
+            {
+                id: "BK-992100",
+                type: "completed",
+                date: "2025-08-01",
+                day: "01",
+                month: "Aug",
+                slot: "05:00 PM - 06:00 PM",
+                members: 2,
+                checkInTime: "05:05 PM",
+                method: "QR Scan",
+                verified: true
+            }
+        ];
+
+        function renderUpcoming() {
+            const container = document.getElementById('section-upcoming');
+            const data = bookings.filter(b => b.type === 'upcoming');
+            
+            container.innerHTML = data.map(b => `
+                <div class="bg-white rounded-xl p-6 border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] card-hover relative overflow-hidden group mb-4">
+                    <div class="absolute top-0 left-0 w-1.5 h-full bg-saffron-500"></div>
+                    
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                        <div class="flex items-center gap-4">
+                            <div class="bg-orange-50 text-saffron-700 w-16 h-16 rounded-xl flex flex-col items-center justify-center border border-orange-100 shadow-sm">
+                                <span class="text-2xl font-bold leading-none font-serif">${b.day}</span>
+                                <span class="text-[10px] uppercase font-semibold tracking-wide">${b.month}</span>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-lg text-navy-800">Somnath Darshan</h3>
+                                <div class="text-sm text-gray-500 font-mono tracking-wide mt-0.5">ID: <span class="text-navy-800 font-semibold">${b.id}</span></div>
+                            </div>
+                        </div>
+                        <span class="mt-2 md:mt-0 bg-green-50 text-green-700 text-xs px-3 py-1.5 rounded-full font-bold uppercase tracking-wide border border-green-200 flex items-center gap-1">
+                            <i class="ph-fill ph-check-circle"></i> Confirmed
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-6 pl-2">
+                        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                            <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-saffron-600 shadow-sm"><i class="ph-bold ph-clock"></i></div>
+                            <div>
+                                <p class="text-[10px] text-gray-400 uppercase font-bold">Time Slot</p>
+                                <p class="font-semibold text-gray-700">${b.slot}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                             <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-saffron-600 shadow-sm"><i class="ph-bold ph-users"></i></div>
+                            <div>
+                                <p class="text-[10px] text-gray-400 uppercase font-bold">Devotees</p>
+                                <p class="font-semibold text-gray-700">${b.members} Person(s)</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-4">
+                        <button onclick="downloadTicket('${b.id}')" class="flex-1 py-3 rounded-lg bg-saffron-600 text-white text-sm font-semibold hover:bg-saffron-700 transition-colors shadow-md flex items-center justify-center gap-2">
+                            <i class="ph-bold ph-download-simple"></i> Download Ticket
+                        </button>
+                        <button onclick="openModal('${b.id}')" class="px-6 py-3 rounded-lg border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
+                            Details
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderCompleted() {
+            const container = document.getElementById('section-completed');
+            const data = bookings.filter(b => b.type === 'completed');
+
+            container.innerHTML = data.map(b => `
+                <div class="bg-white rounded-xl p-5 border border-gray-100 shadow-sm card-hover relative group opacity-90 hover:opacity-100 transition-all">
+                    <div class="absolute top-4 right-4 text-green-600 text-xs font-bold flex items-center gap-1">
+                        <i class="ph-fill ph-seal-check text-lg"></i> Completed
+                    </div>
+
+                    <div class="flex items-start gap-4 mb-3">
+                         <div class="bg-gray-100 text-gray-500 w-12 h-12 rounded-lg flex flex-col items-center justify-center grayscale">
+                            <span class="text-lg font-bold leading-none font-serif">${b.day}</span>
+                            <span class="text-[9px] uppercase font-semibold">${b.month}</span>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-gray-700">Somnath Mandir</h3>
+                            <div class="text-xs text-gray-400 font-mono">ID: ${b.id}</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 rounded-lg p-3 border border-gray-100 flex justify-between items-center">
+                        <div class="flex items-center gap-2">
+                            <div class="w-6 h-6 rounded-full ${b.method === 'Face ID' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'} flex items-center justify-center">
+                                <i class="ph-fill ${b.method === 'Face ID' ? 'ph-scan' : 'ph-qr-code'} text-xs"></i>
+                            </div>
+                            <div>
+                                <p class="text-[10px] text-gray-400 uppercase font-bold leading-none">Entry via</p>
+                                <p class="text-xs font-bold text-navy-800">${b.method}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                             <p class="text-[10px] text-gray-400 uppercase font-bold leading-none">Check-in</p>
+                             <p class="text-xs font-mono text-gray-600">${b.checkInTime}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // --- Tabs Logic ---
+        function switchTab(tab) {
+            const upTab = document.getElementById('tab-upcoming');
+            const compTab = document.getElementById('tab-completed');
+            const upSec = document.getElementById('section-upcoming');
+            const compSec = document.getElementById('section-completed');
+
+            if (tab === 'upcoming') {
+                upTab.className = "px-6 py-2.5 rounded-lg text-sm font-semibold transition-all bg-navy-800 text-white shadow-md";
+                compTab.className = "px-6 py-2.5 rounded-lg text-sm font-semibold text-gray-500 hover:text-navy-800 transition-all";
+                upSec.classList.remove('hidden');
+                compSec.classList.add('hidden');
+            } else {
+                compTab.className = "px-6 py-2.5 rounded-lg text-sm font-semibold transition-all bg-green-700 text-white shadow-md";
+                upTab.className = "px-6 py-2.5 rounded-lg text-sm font-semibold text-gray-500 hover:text-navy-800 transition-all";
+                compSec.classList.remove('hidden');
+                upSec.classList.add('hidden');
+            }
+        }
+
+        function openModal(id) {
+            const booking = bookings.find(b => b.id === id);
+            if(booking) {
+                document.getElementById('modal-id').innerText = booking.id;
+                document.getElementById('modal-date').innerText = booking.date;
+                document.getElementById('modal-slot').innerText = booking.slot;
+                document.getElementById('modal-members').innerText = booking.members;
+                
+                const statusEl = document.getElementById('modal-status');
+                statusEl.innerText = booking.status;
+                statusEl.className = "inline-block px-2 py-0.5 rounded text-xs font-bold bg-green-100 text-green-700";
+
+                document.getElementById('detailsModal').classList.remove('hidden');
+                document.getElementById('detailsModal').classList.add('flex');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('detailsModal').classList.add('hidden');
+            document.getElementById('detailsModal').classList.remove('flex');
+        }
+
+        function downloadTicket(id) {
+            alert("🎟️ Ticket PDF Download Started for: " + id);
+        }
+
+        // Init
+        renderUpcoming();
+        renderCompleted();
+    </script>
+</body>
+</html>
