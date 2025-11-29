@@ -10,9 +10,11 @@ import {
     Headset,
     LogOut,
 } from 'lucide-react';
+import { useTranslation } from '../context/LanguageContext';
 import { Link, useLocation } from 'react-router-dom';
 
 const Sidebar = () => {
+    const { t } = useTranslation();
     const location = useLocation();
     const isActive = (path) => location.pathname === path;
 
@@ -22,65 +24,55 @@ const Sidebar = () => {
 
     return (
         <aside className="w-64 bg-white border-r border-gray-200 flex flex-col flex-shrink-0 z-20 h-full">
-            <div className="h-20 flex items-center px-6 border-b border-gray-100">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg text-white flex items-center justify-center shadow-lg shadow-orange-200">
-                        <span className="text-2xl mt-1">🕉️</span>
-                    </div>
-                    <div>
-                        <h1 className="font-serif font-bold text-xl text-navy-800 leading-none">LUMINE</h1>
-                        <p className="text-[10px] text-orange-600 font-bold tracking-widest uppercase mt-0.5">Devotee Services</p>
-                    </div>
-                </div>
-            </div>
+            {/* Logo removed to avoid duplication with GovernmentHeader */}
 
             <nav className="flex-1 overflow-y-auto p-4 space-y-1 no-scrollbar">
 
                 <Link to="/dashboard" className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all group ${isActive('/dashboard') ? 'bg-navy-900 text-white shadow-lg shadow-navy-900/20' : 'text-gray-500 hover:bg-orange-50 hover:text-orange-700'}`}>
                     <LayoutGrid className={`w-5 h-5 ${isActive('/dashboard') ? '' : 'group-hover:scale-110 transition-transform'}`} />
-                    <span>Dashboard</span>
+                    <span>{t('navDashboard')}</span>
                 </Link>
 
                 <Link to="/dashboard/slot-booking" className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all group ${isActive('/dashboard/slot-booking') ? 'bg-navy-900 text-white shadow-lg shadow-navy-900/20' : 'text-gray-500 hover:bg-orange-50 hover:text-orange-700'}`}>
                     <CalendarPlus className={`w-5 h-5 ${isActive('/dashboard/slot-booking') ? '' : 'group-hover:scale-110 transition-transform'}`} />
-                    <span>Slot Booking</span>
+                    <span>{t('navSlotBooking')}</span>
                 </Link>
 
                 <Link to="/dashboard/my-visits" className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all group ${isActive('/dashboard/my-visits') ? 'bg-navy-800 text-white font-semibold shadow-lg shadow-navy-900/20' : 'text-gray-500 hover:bg-orange-50 hover:text-orange-700'}`}>
                     <History className={`w-5 h-5 ${isActive('/dashboard/my-visits') ? '' : 'group-hover:scale-110 transition-transform'}`} />
-                    <span>My Visits</span>
+                    <span>{t('navMyVisits')}</span>
                 </Link>
 
                 <a href="#" className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-500 font-medium hover:bg-orange-50 hover:text-orange-700 transition-all group">
                     <Signal className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                    <span>Lane Status</span>
+                    <span>{t('navLaneStatus')}</span>
                 </a>
 
                 <div className="my-4 border-t border-gray-100 mx-2"></div>
 
                 <a href="#" className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-500 font-medium hover:bg-orange-50 hover:text-orange-700 transition-all group">
                     <Bell className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                    <span>Admin Notices</span>
+                    <span>{t('navAdminNotices')}</span>
                 </a>
 
                 <a href="#" className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-500 font-medium hover:bg-orange-50 hover:text-orange-700 transition-all group">
                     <QrCode className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                    <span>Devotee QR ID</span>
+                    <span>{t('navDevoteeQr')}</span>
                 </a>
 
                 <a href="#" className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 font-medium hover:bg-red-50 transition-all mt-4 group">
                     <AlertCircle className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                    <span>Emergency Help (SOS)</span>
+                    <span>{t('navEmergency')}</span>
                 </a>
 
             </nav>
 
             <div className="p-4 border-t border-gray-100 bg-gray-50/50">
                 <a href="#" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-500 hover:text-navy-900 transition-colors text-sm mb-1">
-                    <Headset className="w-4 h-4" /> Support
+                    <Headset className="w-4 h-4" /> {t('support')}
                 </a>
                 <button onClick={logout} className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-500 hover:text-red-600 transition-colors text-sm">
-                    <LogOut className="w-4 h-4" /> Logout
+                    <LogOut className="w-4 h-4" /> {t('logout')}
                 </button>
             </div>
         </aside>

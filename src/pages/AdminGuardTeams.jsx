@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import L from 'leaflet';
 import AdminHeader from '../components/admin/AdminHeader';
@@ -103,7 +103,7 @@ const AdminGuardTeams = () => {
         }
     };
 
-    const handleAssignConfirm = (jobType, note) => {
+    const handleAssignConfirm = (jobType) => {
         setTeams(prev => prev.map(t => {
             if (t.id === selectedTeamId) {
                 return {

@@ -5,12 +5,15 @@ const ToastNotification = ({ show, laneName, onClose }) => {
 
     useEffect(() => {
         if (show) {
-            setVisible(true);
-            const timer = setTimeout(() => {
+            const startTimer = setTimeout(() => setVisible(true), 10);
+            const endTimer = setTimeout(() => {
                 setVisible(false);
                 if (onClose) onClose();
             }, 4000);
-            return () => clearTimeout(timer);
+            return () => {
+                clearTimeout(startTimer);
+                clearTimeout(endTimer);
+            };
         }
     }, [show, onClose]);
 

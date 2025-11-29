@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const useSlotBooking = () => {
-    const navigate = useNavigate();
+    // const navigate = useNavigate();
     const [currentStep, setCurrentStep] = useState(1);
     const [temple, setTemple] = useState('');
     const [date, setDate] = useState('');
@@ -35,7 +35,7 @@ const useSlotBooking = () => {
         setMembers(members.map(m => m.id === id ? { ...m, [field]: value } : m));
     };
 
-    const verifyAadhaar = (id, aadhaarNumber) => {
+    const verifyAadhaar = (id) => {
         return new Promise((resolve) => {
             setTimeout(() => {
                 setMembers(members.map(m => m.id === id ? { ...m, verified: true } : m));

@@ -19,17 +19,23 @@ const LoginCard = ({ currentRole, onRoleChange, onLogin, isLoading, globalError 
     const [isSuccess, setIsSuccess] = useState(false);
 
     useEffect(() => {
-        setUserId('');
-        setPassword('');
-        setErrors({ userId: '', password: '' });
-        setIsSuccess(false);
+        const timer = setTimeout(() => {
+            setUserId('');
+            setPassword('');
+            setErrors({ userId: '', password: '' });
+            setIsSuccess(false);
+        }, 0);
+        return () => clearTimeout(timer);
     }, [currentRole]);
 
     useEffect(() => {
         if (globalError) {
-            setIsShaking(true);
-            const timer = setTimeout(() => setIsShaking(false), 500);
-            return () => clearTimeout(timer);
+            const startTimer = setTimeout(() => setIsShaking(true), 50);
+            const endTimer = setTimeout(() => setIsShaking(false), 550);
+            return () => {
+                clearTimeout(startTimer);
+                clearTimeout(endTimer);
+            };
         }
     }, [globalError]);
 

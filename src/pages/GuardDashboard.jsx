@@ -32,13 +32,6 @@ const GuardDashboard = () => {
         return `${m}:${s}`;
     };
 
-    useEffect(() => {
-        const timeout = setTimeout(() => {
-            triggerMockTask();
-        }, 3000);
-        return () => clearTimeout(timeout);
-    }, []);
-
     const triggerMockTask = () => {
         const newTask = {
             id: Math.floor(Math.random() * 1000) + 4000,
@@ -54,6 +47,13 @@ const GuardDashboard = () => {
         setShowToast(true);
         setIsTimerRunning(true);
     };
+
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            triggerMockTask();
+        }, 3000);
+        return () => clearTimeout(timeout);
+    }, []);
 
     const handleLogout = () => {
         sessionStorage.removeItem('lumine_token');
@@ -85,13 +85,7 @@ const GuardDashboard = () => {
         <div className="guard-dashboard-body">
             <header className="top-header">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-[var(--primary)] rounded-lg flex items-center justify-center text-white text-xl shadow-md">
-                        <i className="fas fa-gopuram"></i>
-                    </div>
-                    <div>
-                        <h1 className="brand-font text-[var(--navy)] font-bold text-xl leading-none">Lumine</h1>
-                        <span className="text-[var(--primary)] text-[10px] font-bold tracking-widest uppercase">Somnath Mandir</span>
-                    </div>
+                    {/* Logo removed to avoid duplication with GovernmentHeader */}
                 </div>
 
                 <div className="flex items-center gap-4">

@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '../components/Header';
 import Footer from '../components/Footer';
 import LoginCard from '../components/LoginCard';
 import { HandsPraying, ShieldCheck, LockKey } from '@phosphor-icons/react';
@@ -74,7 +73,6 @@ const Landing = () => {
 
     return (
         <div className="bg-sand font-sans text-gray-800 min-h-screen flex flex-col bg-mandala">
-            <Header />
 
             <main className="flex-grow flex items-center justify-center p-4 lg:p-8">
                 <div className="max-w-7xl w-full grid lg:grid-cols-2 gap-12 lg:gap-24 items-center">

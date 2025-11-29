@@ -26,7 +26,7 @@ const MyVisits = () => {
         month: 'short',
     });
 
-    const [weekday, day, month] = currentDate.split(' ');
+    // const [weekday, day, month] = currentDate.split(' ');
     const formattedDate = new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
 
     return (
