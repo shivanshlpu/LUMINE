@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumine | Guard Teams</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Laila:wght@500;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            /* Lumine Design Tokens */
+            --primary: #d97706;       /* Saffron */
+            --primary-dark: #b45309;
+            --primary-light: #fff7ed;
+            --navy: #012a4a;          /* Official Navy */
+            --navy-light: #023e6b;
+            --bg-body: #fffdfa;       /* Cream Background */
+            --white: #ffffff;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+            
+            /* Status Colors */
+            --status-active: #10b981; /* Green */
+            --status-busy: #f59e0b;   /* Orange */
+            --status-free: #3b82f6;   /* Blue */
+            --status-rest: #94a3b8;   /* Grey */
+            --status-offline: #ef4444;/* Red */
+            
+            --radius: 12px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            --border: 1px solid var(--gray-200);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-dark);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- HEADER --- */
+        .top-header {
+            background: var(--white);
+            height: 70px;
+            padding: 0 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--primary);
+            flex-shrink: 0;
+            z-index: 50;
+        }
+
+        .brand-area { display: flex; align-items: center; gap: 12px; }
+        .brand-icon {
+            width: 36px; height: 36px;
+            background: var(--primary);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 18px;
+        }
+        .brand-text h2 { font-family: 'Laila', serif; font-size: 1.2rem; line-height: 1; color: var(--navy); }
+        .brand-text span { font-size: 0.7rem; color: var(--primary); letter-spacing: 1px; text-transform: uppercase; }
+
+        .nav-pills { display: flex; gap: 8px; }
+        .nav-pill {
+            padding: 8px 16px; 
+            border-radius: 20px; 
+            font-size: 0.85rem; 
+            font-weight: 500; 
+            cursor: pointer; 
+            color: var(--text-muted); 
+            text-decoration: none; 
+            transition: 0.2s;
+        }
+        .nav-pill.active { background: var(--primary); color: white; }
+        .nav-pill:hover:not(.active) { background: var(--primary-light); color: var(--primary-dark); }
+
+        /* --- MAIN LAYOUT --- */
+        .main-layout {
+            flex-grow: 1;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 280px 1fr 340px; /* 3 Columns */
+            gap: 20px;
+            overflow: hidden;
+        }
+
+        /* --- COLUMN 1: TEAM LIST --- */
+        .col-left {
+            display: flex; flex-direction: column; gap: 15px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+        .section-title { font-size: 0.9rem; font-weight: 600; color: var(--navy); margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
+        
+        .team-card {
+            background: var(--white);
+            border: var(--border);
+            border-radius: var(--radius);
+            padding: 15px;
+            transition: 0.2s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        .team-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); border-color: var(--primary); }
+        .team-card.selected { border: 2px solid var(--navy); background: #f8fafc; }
+        
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .team-name { font-family: 'Laila', serif; font-weight: 700; color: var(--navy); font-size: 1.1rem; }
+        .status-badge { font-size: 0.65rem; padding: 2px 8px; border-radius: 10px; font-weight: 600; text-transform: uppercase; color: white;}
+        
+        .card-meta { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px; display: flex; gap: 10px; }
+        .card-loc { font-size: 0.75rem; color: var(--navy); display: flex; align-items: center; gap: 4px; font-weight: 500; }
+        
+        .btn-add-team {
+            background: var(--primary); color: white; border: none; padding: 12px;
+            border-radius: var(--radius); font-weight: 600; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            margin-top: auto;
+        }
+
+        /* --- COLUMN 2: MAP --- */
+        .col-center {
+            background: var(--white);
+            border-radius: var(--radius);
+            border: var(--border);
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+        #map { width: 100%; height: 100%; z-index: 1; }
+        
+        .map-overlay-controls {
+            position: absolute; top: 15px; left: 15px; z-index: 10;
+            background: rgba(255,255,255,0.9); backdrop-filter: blur(4px);
+            padding: 8px 12px; border-radius: 8px; border: var(--border);
+            font-size: 0.75rem; font-weight: 600; color: var(--navy);
+            box-shadow: var(--shadow);
+        }
+
+        /* Leaflet Customization for Lumine Theme (Layers & Zoom) */
+        .leaflet-control-zoom a, .leaflet-control-layers-toggle {
+            border-radius: 8px !important;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+            color: var(--navy) !important;
+            border: 1px solid #e2e8f0 !important;
+        }
+        .leaflet-bar { border: none !important; box-shadow: none !important; }
+        .leaflet-touch .leaflet-control-layers, .leaflet-touch .leaflet-bar {
+            border: none !important;
+        }
+        .leaflet-control-layers {
+            border-radius: 8px !important;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+            border: 1px solid #e2e8f0 !important;
+            font-family: 'Poppins', sans-serif !important;
+            font-size: 0.8rem !important;
+        }
+
+        /* --- COLUMN 3: DETAILS PANEL --- */
+        .col-right {
+            background: var(--white);
+            border-radius: var(--radius);
+            border: var(--border);
+            display: flex; flex-direction: column;
+            overflow: hidden;
+        }
+        .panel-header {
+            padding: 20px; border-bottom: var(--border);
+            background: linear-gradient(to bottom, #fff, #f8fafc);
+        }
+        .panel-body { padding: 20px; overflow-y: auto; flex-grow: 1; }
+        
+        .detail-name { font-family: 'Laila', serif; font-size: 1.5rem; font-weight: 700; color: var(--navy); margin-bottom: 5px; }
+        .detail-status-select {
+            padding: 6px 10px; border-radius: 6px; border: var(--border); font-size: 0.8rem;
+            width: 100%; margin-bottom: 20px; font-weight: 500; cursor: pointer;
+        }
+
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .stat-box { background: var(--gray-100); padding: 10px; border-radius: 8px; text-align: center; }
+        .stat-num { font-size: 1.2rem; font-weight: 700; color: var(--primary); display: block; }
+        .stat-lbl { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
+
+        .member-list { list-style: none; margin-bottom: 20px; }
+        .member-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px dashed var(--gray-200); }
+        .member-avatar { width: 30px; height: 30px; background: var(--navy-light); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; }
+        .member-info h5 { font-size: 0.85rem; color: var(--text-dark); }
+        .member-info span { font-size: 0.7rem; color: var(--text-muted); }
+
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: auto; }
+        .action-btn {
+            padding: 10px; border-radius: 8px; border: var(--border); background: white;
+            font-size: 0.8rem; font-weight: 500; cursor: pointer; transition: 0.2s;
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+            color: var(--text-dark);
+        }
+        .action-btn:hover { background: var(--gray-100); border-color: var(--navy); }
+        .action-btn.danger { color: var(--status-offline); }
+        .action-btn.danger:hover { background: #fef2f2; border-color: var(--status-offline); }
+
+        /* --- MODAL --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 31, 63, 0.4); backdrop-filter: blur(2px);
+            z-index: 1000; display: none; align-items: center; justify-content: center;
+        }
+        .modal-card {
+            background: white; width: 400px; padding: 25px; border-radius: var(--radius);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        /* --- MAP MARKER STYLES --- */
+        .guard-marker {
+            width: 30px; height: 30px;
+            background: white; border-radius: 50%;
+            border: 3px solid var(--navy);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--navy); font-size: 14px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: transform 0.3s;
+        }
+        .guard-marker.active { border-color: var(--status-active); color: var(--status-active); }
+        .guard-marker.busy { border-color: var(--status-busy); color: var(--status-busy); }
+        .guard-marker.rest { border-color: var(--status-rest); color: var(--status-rest); background: #f1f5f9; }
+
+        /* Toast */
+        .toast {
+            position: fixed; top: 90px; right: 30px;
+            background: var(--navy); color: white; padding: 12px 20px;
+            border-radius: 8px; border-left: 4px solid var(--primary);
+            transform: translateX(200%); transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 2000;
+            display: flex; align-items: center; gap: 10px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+    </style>
+</head>
+<body>
+
+    <header class="top-header">
+        <div class="brand-area">
+            <div class="brand-icon">🏛️</div>
+            <div class="brand-text">
+                <h2>Lumine</h2>
+                <span>Somnath Mandir</span>
+            </div>
+        </div>
+        
+        <div class="nav-pills">
+            <a href="admindashboard.html" class="nav-pill">Dashboard</a>
+            <a href="heatmap.html" class="nav-pill">Live Heatmap</a>
+            <a href="guard.html" class="nav-pill active">Guard Teams</a>
+            <a href="lane.html" class="nav-pill">Lane Control</a>
+            <a href="settings.html" class="nav-pill">Settings</a>
+        </div>
+        
+        <div style="width:35px; height:35px; background:var(--primary-light); border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--primary); font-weight:bold;">A</div>
+    </header>
+
+    <main class="main-layout">
+        
+        <div class="col-left" id="team-list-container">
+            <div class="section-title">
+                <span>All Teams</span>
+                <span class="badge" style="background:var(--gray-200); color:var(--navy);">Total: 5</span>
+            </div>
+            <button class="btn-add-team" onclick="showToast('Feature coming soon')">
+                <i class="fas fa-plus"></i> Add New Team
+            </button>
+        </div>
+
+        <div class="col-center">
+            <div class="map-overlay-controls">
+                <i class="fas fa-satellite-dish text-green-500 animate-pulse"></i> GPS Live
+            </div>
+            <div id="map"></div>
+        </div>
+
+        <div class="col-right" id="detail-panel">
+            <div class="panel-header">
+                <h2 class="detail-name" id="det-name">Select Team</h2>
+                <select id="det-status" class="detail-status-select" onchange="updateTeamStatusFromPanel()">
+                    <option value="Active">Active (Patrolling)</option>
+                    <option value="Busy">Busy (On Task)</option>
+                    <option value="Rest">On Rest</option>
+                    <option value="Free">Free (Standby)</option>
+                </select>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <span class="stat-num" id="det-tasks-today">--</span>
+                        <span class="stat-lbl">Tasks Today</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-num" id="det-tasks-total">--</span>
+                        <span class="stat-lbl">Lifetime</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel-body">
+                <h5 class="section-title">Members</h5>
+                <ul class="member-list" id="det-members">
+                    </ul>
+
+                <h5 class="section-title">Message Team</h5>
+                <div style="display:flex; gap:5px; margin-bottom:20px;">
+                    <input type="text" id="msg-input" placeholder="Radio command..." style="flex:1; padding:8px; border:var(--border); border-radius:6px; font-size:0.8rem;">
+                    <button onclick="sendMessage()" style="background:var(--navy); color:white; border:none; padding:0 12px; border-radius:6px; cursor:pointer;"><i class="fas fa-paper-plane"></i></button>
+                </div>
+
+                <div class="action-grid">
+                    <button class="action-btn" onclick="openAssignModal(currentSelectedTeamId)">
+                        <i class="fas fa-clipboard-check" style="color:var(--primary)"></i> Assign Job
+                    </button>
+                    <button class="action-btn" onclick="toggleRestMode()">
+                        <i class="fas fa-coffee" style="color:var(--text-muted)"></i> Toggle Rest
+                    </button>
+                    <button class="action-btn" onclick="locateTeam()">
+                        <i class="fas fa-crosshairs" style="color:var(--status-free)"></i> Locate
+                    </button>
+                    <button class="action-btn danger">
+                        <i class="fas fa-trash"></i> Remove
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="modal-overlay" id="assign-modal">
+        <div class="modal-card">
+            <h3 style="font-family:'Laila', serif; color:var(--navy); margin-bottom:15px;">Assign New Job</h3>
+            <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:15px;" id="modal-subtitle">Assigning to Team...</p>
+            
+            <label style="font-size:0.75rem; font-weight:600; display:block; margin-bottom:5px;">Job Type</label>
+            <select id="job-type" style="width:100%; padding:10px; border:var(--border); border-radius:8px; margin-bottom:15px;">
+                <option value="Crowd Control">Crowd Control (High Density)</option>
+                <option value="Queue Check">Queue Check</option>
+                <option value="Medical Assist">Medical Assist</option>
+                <option value="Lost Child">Lost Child Search</option>
+                <option value="VIP Escort">VIP Escort</option>
+            </select>
+            
+            <label style="font-size:0.75rem; font-weight:600; display:block; margin-bottom:5px;">Instructions (Optional)</label>
+            <textarea id="job-note" rows="3" style="width:100%; padding:10px; border:var(--border); border-radius:8px; margin-bottom:20px;"></textarea>
+            
+            <div style="display:flex; gap:10px;">
+                <button onclick="closeModal()" style="flex:1; padding:10px; background:var(--gray-200); border:none; border-radius:8px; font-weight:600; cursor:pointer;">Cancel</button>
+                <button onclick="confirmAssignment()" style="flex:1; padding:10px; background:var(--primary); color:white; border:none; border-radius:8px; font-weight:600; cursor:pointer;">Dispatch</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i> <span id="toast-msg">Action Successful</span>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // --- CONFIG ---
+        // Center on Somnath Mandir Structure (approx based on heatmap file)
+        const MAP_CENTER = [20.8881, 70.4012]; 
+        const ZOOM_LEVEL = 19;
+
+        // Mock Database
+        let teams = [
+            {
+                id: 't1', name: 'Team Alpha', status: 'Active', color: 'var(--status-active)', 
+                loc: [20.8885, 70.4015], // Near Gate
+                lastUpdate: 'Now', tasksToday: 12, tasksTotal: 145,
+                members: [ {name: 'Ramesh Singh', role: 'Lead'}, {name: 'Suresh K.', role: 'Guard'} ]
+            },
+            {
+                id: 't2', name: 'Team Beta', status: 'Busy', color: 'var(--status-busy)',
+                loc: [20.8878, 70.4008], // Near Mandir
+                lastUpdate: '1m ago', tasksToday: 8, tasksTotal: 92,
+                members: [ {name: 'Vikram R.', role: 'Lead'}, {name: 'Amit P.', role: 'Guard'} ]
+            },
+            {
+                id: 't3', name: 'Team Gamma', status: 'Free', color: 'var(--status-free)',
+                loc: [20.8882, 70.4020], // East
+                lastUpdate: '5m ago', tasksToday: 2, tasksTotal: 34,
+                members: [ {name: 'Deepak S.', role: 'Lead'}, {name: 'Rahul T.', role: 'Guard'} ]
+            },
+            {
+                id: 't4', name: 'Team Delta', status: 'Rest', color: 'var(--status-rest)',
+                loc: [20.8890, 70.4000], // Back office
+                lastUpdate: '10m ago', tasksToday: 5, tasksTotal: 110,
+                members: [ {name: 'Arjun M.', role: 'Lead'} ]
+            },
+            {
+                id: 't5', name: 'Team Echo', status: 'Offline', color: 'var(--status-offline)',
+                loc: [20.8870, 70.4030], // Far out
+                lastUpdate: '1h ago', tasksToday: 0, tasksTotal: 22,
+                members: [ {name: 'Karan J.', role: 'Lead'} ]
+            }
+        ];
+
+        let currentSelectedTeamId = teams[0].id;
+        let map, markers = {};
+        let clickTargetLoc = null; // For map click assignment
+
+        // --- INIT ---
+        window.addEventListener('DOMContentLoaded', () => {
+            initMap();
+            renderTeamList();
+            renderDetailPanel(currentSelectedTeamId);
+            startSimulation();
+        });
+
+        // --- MAP FUNCTIONS ---
+        function initMap() {
+            // Define Layers
+            const mapStyleNormal = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                attribution: 'Lumine', maxZoom: 21
+            });
+            const mapStyleSatellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles &copy; Esri', maxZoom: 21
+            });
+
+            // Init Map with Normal Layer Default
+            map = L.map('map', { 
+                zoomControl: false, 
+                attributionControl: false,
+                layers: [mapStyleNormal] 
+            }).setView(MAP_CENTER, ZOOM_LEVEL);
+            
+            // Add Zoom Control (Bottom Right)
+            L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+            // Add Layer Control (Top Right)
+            const baseMaps = {
+                "Map View": mapStyleNormal,
+                "Satellite": mapStyleSatellite
+            };
+            L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
+
+            // Render Initial Markers
+            renderMarkers();
+
+            // Map Click Interaction -> Assign Nearest Team
+            map.on('click', (e) => {
+                clickTargetLoc = e.latlng;
+                const nearest = findNearestAvailableTeam(e.latlng);
+                if(nearest) {
+                    currentSelectedTeamId = nearest.id;
+                    renderTeamList(); // highlight in list
+                    renderDetailPanel(nearest.id); // show in panel
+                    openAssignModal(nearest.id, true); // Open modal with "Nearest" context
+                } else {
+                    showToast('No available teams nearby!', true);
+                }
+            });
+        }
+
+        function renderMarkers() {
+            // Clear existing
+            for(let id in markers) map.removeLayer(markers[id]);
+            
+            teams.forEach(t => {
+                if(t.status === 'Offline') return; // Don't show offline on live map usually, or show gray
+
+                const iconClass = `guard-marker ${t.status.toLowerCase()}`;
+                const icon = L.divIcon({
+                    className: 'custom-map-icon',
+                    html: `<div class="${iconClass}"><i class="fas fa-user-shield"></i></div>`,
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 15]
+                });
+
+                const marker = L.marker(t.loc, {icon: icon}).addTo(map);
+                marker.bindTooltip(t.name, {offset: [0, -10], direction: 'top'});
+                
+                marker.on('click', () => {
+                    selectTeam(t.id);
+                });
+
+                markers[t.id] = marker;
+            });
+        }
+
+        // --- UI RENDER FUNCTIONS ---
+        function renderTeamList() {
+            const container = document.getElementById('team-list-container');
+            // Keep the Add button, remove cards
+            const btn = container.querySelector('.btn-add-team');
+            container.innerHTML = '';
+            
+            // Re-add title
+            container.innerHTML = `
+                <div class="section-title">
+                    <span>All Teams</span>
+                    <span class="badge" style="background:var(--gray-200); color:var(--navy);">Total: ${teams.length}</span>
+                </div>
+            `;
+
+            teams.forEach(t => {
+                const statusColor = getStatusColor(t.status);
+                const isSel = t.id === currentSelectedTeamId ? 'selected' : '';
+                
+                const card = document.createElement('div');
+                card.className = `team-card ${isSel}`;
+                card.onclick = () => selectTeam(t.id);
+                card.innerHTML = `
+                    <div class="card-header">
+                        <span class="team-name">${t.name}</span>
+                        <span class="status-badge" style="background:${statusColor}">${t.status}</span>
+                    </div>
+                    <div class="card-meta">
+                        <span><i class="fas fa-clock"></i> ${t.lastUpdate}</span>
+                        <span><i class="fas fa-tasks"></i> ${t.tasksToday}/${t.tasksTotal}</span>
+                    </div>
+                    <div class="card-loc">
+                        <i class="fas fa-map-marker-alt" style="color:var(--primary)"></i> 
+                        ${t.status === 'Offline' ? 'Last known loc' : 'Live Tracking'}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            container.appendChild(btn);
+        }
+
+        function renderDetailPanel(id) {
+            const team = teams.find(t => t.id === id);
+            if(!team) return;
+
+            document.getElementById('det-name').innerText = team.name;
+            document.getElementById('det-status').value = team.status;
+            document.getElementById('det-tasks-today').innerText = team.tasksToday;
+            document.getElementById('det-tasks-total').innerText = team.tasksTotal;
+
+            // Members
+            const memContainer = document.getElementById('det-members');
+            memContainer.innerHTML = '';
+            team.members.forEach(m => {
+                const li = document.createElement('li');
+                li.className = 'member-item';
+                li.innerHTML = `
+                    <div class="member-avatar">${m.name.charAt(0)}</div>
+                    <div class="member-info">
+                        <h5>${m.name}</h5>
+                        <span>${m.role} • <span style="color:var(--status-active)">Online</span></span>
+                    </div>
+                `;
+                memContainer.appendChild(li);
+            });
+        }
+
+        function selectTeam(id) {
+            currentSelectedTeamId = id;
+            renderTeamList();
+            renderDetailPanel(id);
+            // Pan map if online
+            const team = teams.find(t => t.id === id);
+            if(team && team.status !== 'Offline') {
+                map.flyTo(team.loc, 20);
+            }
+        }
+
+        // --- LOGIC ---
+        function getStatusColor(status) {
+            switch(status) {
+                case 'Active': return 'var(--status-active)';
+                case 'Busy': return 'var(--status-busy)';
+                case 'Free': return 'var(--status-free)';
+                case 'Rest': return 'var(--status-rest)';
+                default: return 'var(--status-offline)';
+            }
+        }
+
+        function findNearestAvailableTeam(targetLatLng) {
+            let nearest = null;
+            let minDist = Infinity;
+
+            teams.forEach(t => {
+                if(t.status === 'Active' || t.status === 'Free') {
+                    const dist = Math.sqrt(Math.pow(t.loc[0] - targetLatLng.lat, 2) + Math.pow(t.loc[1] - targetLatLng.lng, 2));
+                    if(dist < minDist) {
+                        minDist = dist;
+                        nearest = t;
+                    }
+                }
+            });
+            return nearest;
+        }
+
+        function startSimulation() {
+            // Move teams slightly every 3 seconds to simulate GPS drift/patrol
+            setInterval(() => {
+                teams.forEach(t => {
+                    if(t.status === 'Active' || t.status === 'Busy') {
+                        // Tiny random movement
+                        t.loc[0] += (Math.random() - 0.5) * 0.0001;
+                        t.loc[1] += (Math.random() - 0.5) * 0.0001;
+                        
+                        // Update marker
+                        if(markers[t.id]) markers[t.id].setLatLng(t.loc);
+                    }
+                });
+            }, 3000);
+        }
+
+        // --- ACTIONS ---
+        function openAssignModal(id, fromMap = false) {
+            currentSelectedTeamId = id;
+            const team = teams.find(t => t.id === id);
+            
+            document.getElementById('modal-subtitle').innerText = fromMap 
+                ? `📍 Location Selected. Assigning nearest team: ${team.name}` 
+                : `Assigning new task to ${team.name}`;
+                
+            document.getElementById('assign-modal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('assign-modal').style.display = 'none';
+        }
+
+        function confirmAssignment() {
+            const team = teams.find(t => t.id === currentSelectedTeamId);
+            const job = document.getElementById('job-type').value;
+            
+            // Update Team Logic
+            team.status = 'Busy';
+            team.tasksToday++;
+            team.tasksTotal++;
+            
+            // Draw Line if click target exists
+            if(clickTargetLoc) {
+                L.polyline([team.loc, clickTargetLoc], {color: 'var(--navy)', dashArray: '5, 10'}).addTo(map);
+                clickTargetLoc = null;
+            }
+
+            // Refresh UI
+            renderTeamList();
+            renderDetailPanel(team.id);
+            renderMarkers(); // To update color ring
+            closeModal();
+            showToast(`${team.name} dispatched for ${job}`);
+        }
+
+        function updateTeamStatusFromPanel() {
+            const val = document.getElementById('det-status').value;
+            const team = teams.find(t => t.id === currentSelectedTeamId);
+            team.status = val;
+            renderTeamList();
+            renderMarkers();
+            showToast(`Status updated to ${val}`);
+        }
+
+        function toggleRestMode() {
+            const team = teams.find(t => t.id === currentSelectedTeamId);
+            if(team.status === 'Rest') {
+                team.status = 'Active';
+                showToast(`${team.name} back to duty`);
+            } else {
+                team.status = 'Rest';
+                showToast(`${team.name} is now resting`);
+            }
+            renderTeamList();
+            renderDetailPanel(team.id);
+            renderMarkers();
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('msg-input');
+            if(input.value.trim() === "") return;
+            showToast(`Message sent: "${input.value}"`);
+            input.value = "";
+        }
+
+        function locateTeam() {
+            selectTeam(currentSelectedTeamId);
+            showToast('Locating team on map...');
+        }
+
+        function showToast(msg, isError = false) {
+            const t = document.getElementById('toast');
+            t.innerHTML = isError ? `<i class="fas fa-exclamation-circle"></i> ${msg}` : `<i class="fas fa-check-circle"></i> ${msg}`;
+            t.style.borderLeftColor = isError ? 'var(--status-offline)' : 'var(--status-active)';
+            t.style.transform = 'translateX(0)';
+            setTimeout(() => {
+                t.style.transform = 'translateX(200%)';
+            }, 3000);
+        }
+
+    </script>
+</body>
+</html>
