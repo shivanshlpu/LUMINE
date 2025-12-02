@@ -7,8 +7,8 @@ const LaneCard = ({ lane, onStatusChange, onOpenCam, onAssignGuard }) => {
         if (status === 'CLOSED') return '#718096';
         if (status === 'BUSY') return '#DD6B20'; // Orange
         if (percentage > 85) return '#E53E3E';
-        if (percentage > 60) return '#DD6B20';
-        if (percentage > 20) return '#F59E0B';
+        if (percentage > 70) return '#DD6B20';
+        if (percentage > 50) return '#F59E0B';
         return '#38A169'; // Green
     };
 
@@ -40,6 +40,18 @@ const LaneCard = ({ lane, onStatusChange, onOpenCam, onAssignGuard }) => {
     let statusText = lane.status;
     let strokeColor = '#38A169';
 
+    const [showCardBadge, setShowCardBadge] = React.useState(false);
+    const [cardId, setCardId] = React.useState(null);
+
+    React.useEffect(() => {
+        if (lane.lastCardSeen && lane.lastCardSeen.ts > Date.now() - 3000) {
+            setCardId(lane.lastCardSeen.id);
+            setShowCardBadge(true);
+            const timer = setTimeout(() => setShowCardBadge(false), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [lane.lastCardSeen]);
+
     if (lane.status === 'STUCK') {
         statusClass = 'badge-stuck'; cardClass = 'stuck'; strokeColor = '#E53E3E'; statusText = '⚠️ STUCK';
     } else if (lane.status === 'BUSY') {
@@ -66,7 +78,14 @@ const LaneCard = ({ lane, onStatusChange, onOpenCam, onAssignGuard }) => {
                         </div>
                     </div>
                 </div>
-                <span className={`badge ${statusClass}`}>{statusText}</span>
+                <div className="flex gap-2">
+                    {showCardBadge && (
+                        <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded animate-pulse">
+                            💳 {cardId}
+                        </span>
+                    )}
+                    <span className={`badge ${statusClass}`}>{statusText}</span>
+                </div>
             </div>
 
             <div className="flex gap-1 mb-4 bg-gray-50 p-1 rounded-md justify-between">
@@ -94,9 +113,16 @@ const LaneCard = ({ lane, onStatusChange, onOpenCam, onAssignGuard }) => {
                     <div className="text-[10px] text-gray-400 uppercase">Throughput</div>
                     <div className="font-bold text-gray-700">{lane.throughput} <span className="text-[10px] font-normal">/min</span></div>
                 </div>
-                <div className="text-gray-500" style={{ color: strokeColor }}>
-                    {generateSparkline(lane.history)}
+                <div className="text-right">
+                    <div className="text-[10px] text-gray-400 uppercase">Environment</div>
+                    <div className="flex gap-2 text-xs font-bold text-gray-600">
+                        <span><i className="fas fa-thermometer-half text-red-400"></i> {lane.temp}°C</span>
+                        <span><i className="fas fa-tint text-blue-400"></i> {lane.humidity}%</span>
+                    </div>
                 </div>
+            </div>
+            <div className="text-gray-500 mb-2" style={{ color: strokeColor }}>
+                {generateSparkline(lane.history)}
             </div>
 
             <div className="grid grid-cols-2 gap-2">

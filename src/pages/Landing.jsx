@@ -29,7 +29,7 @@ const Landing = () => {
                 return true;
             }
 
-            if (role === 'security_guard' && userId.trim().toLowerCase() === 'guard' && (password === 'shivansh' || password === 'SHIVASH')) {
+            if (role === 'security_guard' && userId.trim().toLowerCase() === 'guard' && (password === 'shivansh' || password === 'SHIVANSH')) {
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 handleSuccess({ token: 'mock-guard-token', redirectUrl: '/guard/dashboard' }, rememberMe);
                 return true;

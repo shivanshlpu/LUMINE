@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { io } from 'socket.io-client';
 import AdminHeader from '../components/admin/AdminHeader';
 import LaneCard from '../components/admin/lane/LaneCard';
 import LiveCamModal from '../components/admin/lane/LiveCamModal';
@@ -14,63 +15,119 @@ const AdminLaneControl = () => {
     const [activeCamLane, setActiveCamLane] = useState(null);
     const [activeGuardLane, setActiveGuardLane] = useState(null);
 
-
     useEffect(() => {
-        const initialData = Array.from({ length: 8 }, (_, i) => ({
-            id: i + 1,
-            name: `Lane ${i + 1}`,
-            camId: `CAM-0${i + 1}`,
-            location: { lat: 20.8880 + (i * 0.0001), lng: 70.4010 + (i * 0.0001) },
-            rawHeadCount: 250 + Math.floor(Math.random() * 250),
-            capacity: 300,
-            throughput: 12 + Math.floor(Math.random() * 10),
-            lastMove: Date.now(),
-            status: 'OPEN',
-            manualOverride: false,
-            temp: 30 + Math.floor(Math.random() * 5),
-            humidity: 60 + Math.floor(Math.random() * 15),
-            history: Array(15).fill(10).map(() => Math.floor(Math.random() * 20)),
-            isJammed: false
-        }));
-        setLanesData(initialData);
-    }, []);
+        const fetchLanesData = async () => {
+            try {
+                const response = await fetch('http://localhost:3000/api/lanes');
+                const data = await response.json();
 
+                setLanesData(prevLanes => {
+                    // Only show lanes that exist in the backend AND have numeric IDs
+                    return data
+                        .filter(l => !isNaN(l.laneId))
+                        .map((apiLane, index) => {
+                            const laneId = apiLane.laneId;
 
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setLanesData(prevLanes => {
-                let newTotal = 0;
-                const newLanes = prevLanes.map(lane => {
-                    const newLane = { ...lane, history: [...lane.history] };
+                            // If we have previous state, preserve it
+                            const existingState = prevLanes.find(l => l.laneId == laneId);
 
-                    if (newLane.status === 'CLOSED') {
-                        if (newLane.rawHeadCount > 0) newLane.rawHeadCount -= Math.floor(Math.random() * 5);
-                        newLane.throughput = 0;
-                    } else {
-                        const change = Math.floor(Math.random() * 25) - 10;
-                        if (newLane.id === 3 && newLane.isJammed) {
-                            newLane.rawHeadCount += 15;
-                            newLane.throughput = 0;
-                            if ((newLane.rawHeadCount / 5) > 50 && !newLane.manualOverride) newLane.status = 'STUCK';
-                        } else {
-                            newLane.rawHeadCount = Math.max(0, newLane.rawHeadCount + change);
-                            newLane.throughput = Math.max(0, 12 + Math.floor(Math.random() * 8) - 4);
-
-                            if (newLane.status === 'STUCK' && !newLane.isJammed && !newLane.manualOverride) newLane.status = 'OPEN';
-                        }
-                    }
-
-                    newLane.history.shift();
-                    newLane.history.push(newLane.throughput);
-
-                    newTotal += Math.ceil(newLane.rawHeadCount / 5);
-                    return newLane;
+                            return {
+                                id: laneId,
+                                laneId: laneId,
+                                name: `Lane ${laneId}`,
+                                camId: `CAM-0${laneId}`,
+                                location: apiLane.location || { lat: 20.8880, lng: 70.4010 },
+                                rawHeadCount: apiLane.crowdCount || 0,
+                                capacity: 300,
+                                throughput: 0,
+                                lastMove: apiLane.lastUpdated || Date.now(),
+                                status: apiLane.status === 'RED' ? 'STUCK' : (apiLane.status === 'YELLOW' ? 'BUSY' : 'OPEN'),
+                                manualOverride: false,
+                                temp: apiLane.temperature || '--',
+                                humidity: apiLane.humidity || '--',
+                                history: existingState?.history || Array(15).fill(0),
+                                isJammed: false
+                            };
+                        });
                 });
-                setTotalCapacity(newTotal);
-                return newLanes;
+            } catch (error) {
+                console.error('Error fetching lanes data:', error);
+            }
+        };
+
+        fetchLanesData();
+
+        // Socket Connection
+        const socket = io('http://localhost:3000');
+
+        socket.on('connect', () => {
+            console.log('✅ Connected to WebSocket in Lane Control');
+        });
+
+        socket.on('lane-update', (updatedLane) => {
+            console.log('🔥 [LaneControl] DATA RECEIVED:', updatedLane);
+
+            setLanesData(prevLanes => {
+                return prevLanes.map(lane => {
+                    if (lane.laneId == updatedLane.laneId) {
+                        const newStatus = updatedLane.status === 'RED' ? 'STUCK' : (updatedLane.status === 'YELLOW' ? 'BUSY' : 'OPEN');
+                        return {
+                            ...lane,
+                            rawHeadCount: updatedLane.crowdCount !== undefined ? updatedLane.crowdCount : lane.rawHeadCount,
+                            temp: updatedLane.temperature || lane.temp,
+                            humidity: updatedLane.humidity || lane.humidity,
+                            status: !lane.manualOverride ? newStatus : lane.status,
+                            lastMove: new Date()
+                        };
+                    }
+                    return lane;
+                });
             });
-        }, 2000);
-        return () => clearInterval(interval);
+        });
+
+        // Handle New Lane Auto-Creation
+        socket.on('receiver_added', (newReceiver) => {
+            console.log('🆕 New Receiver Added:', newReceiver);
+            setLanesData(prev => {
+                if (prev.find(l => l.laneId == newReceiver.receiver_id)) return prev; // Already exists
+
+                const newLane = {
+                    id: newReceiver.receiver_id,
+                    laneId: newReceiver.receiver_id,
+                    name: newReceiver.label || `Lane ${newReceiver.receiver_id}`,
+                    camId: `CAM-0${newReceiver.receiver_id}`,
+                    location: { lat: newReceiver.x || 0, lng: newReceiver.y || 0 },
+                    rawHeadCount: 0,
+                    capacity: 300,
+                    throughput: 0,
+                    lastMove: Date.now(),
+                    status: 'OPEN',
+                    manualOverride: false,
+                    temp: '--',
+                    humidity: '--',
+                    history: Array(15).fill(0),
+                    isJammed: false,
+                    isUnplaced: !newReceiver.x // Flag for UI to show "Unplaced" warning
+                };
+                showToast(`New Lane Detected: ${newLane.name}`);
+                return [...prev, newLane];
+            });
+        });
+
+        // Handle Card Seen
+        socket.on('cardseen', (data) => {
+            console.log('👀 Card Seen Event:', data);
+            setLanesData(prev => prev.map(lane => {
+                if (lane.laneId == data.receiver_id) {
+                    return { ...lane, lastCardSeen: { id: data.sender_id, ts: Date.now() } };
+                }
+                return lane;
+            }));
+        });
+
+        return () => {
+            socket.disconnect();
+        };
     }, []);
 
     const showToast = (msg, isError = false) => {
@@ -101,16 +158,6 @@ const AdminLaneControl = () => {
         }));
     };
 
-    const handleSimulateJam = () => {
-        setLanesData(prev => prev.map(lane => {
-            if (lane.id === 3) {
-                showToast("Simulating Jam on Lane 3...", true);
-                return { ...lane, isJammed: true, rawHeadCount: 1200, throughput: 0 };
-            }
-            return lane;
-        }));
-    };
-
     const handleGuardAssignConfirm = () => {
         showToast(`Alpha Team dispatched to ${activeGuardLane.name}`);
         setActiveGuardLane(null);
@@ -131,9 +178,6 @@ const AdminLaneControl = () => {
                         </p>
                     </div>
                     <div className="flex gap-3">
-                        <button onClick={handleSimulateJam} className="bg-red-50 text-red-600 px-4 py-2 rounded-lg text-xs font-bold border border-red-200 hover:bg-red-100 transition shadow-sm">
-                            <i className="fas fa-bug mr-1"></i> Sim Jam (L-3)
-                        </button>
                         <div className="text-right bg-white p-2 rounded-lg border border-gray-200 shadow-sm px-4">
                             <p className="text-[10px] text-gray-400 uppercase tracking-wide">Total Effective Capacity</p>
                             <p className="text-xl font-bold text-lumine-orange">{totalCapacity} / {lanesData.length * 300}</p>

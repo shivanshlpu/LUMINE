@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { io } from 'socket.io-client';
 import '../styles/admin.css';
 import AdminHeader from '../components/admin/AdminHeader';
 import StatsBar from '../components/admin/StatsBar';
@@ -18,19 +19,66 @@ const INITIAL_GUARDS = [
     { id: 'g3', name: 'Team Gamma', status: 'Available', lat: 20.8890, lon: 70.4015, dist: 'Calculating...' },
 ];
 
-const INITIAL_ALERTS = [
-    { id: 1, type: 'Crowd High Density', icon: '👥', loc: 'Gate 2', lat: 20.8882, lon: 70.4008, desc: 'Camera #42 detected > 100 people queue.' },
-    { id: 2, type: 'Medical Assistance', icon: '🚑', loc: 'Queue Complex', lat: 20.8875, lon: 70.4012, desc: 'Devotee SOS: Fainting reported.' },
-    { id: 3, type: 'Lost Child', icon: '👶', loc: 'Shoe Counter', lat: 20.8888, lon: 70.4002, desc: 'Blue shirt, 5 years old.' }
-];
+const INITIAL_ALERTS = [];
 
 const AdminDashboard = () => {
     const [guards, setGuards] = useState(INITIAL_GUARDS);
-    const [alerts] = useState(INITIAL_ALERTS);
+    const [alerts, setAlerts] = useState(INITIAL_ALERTS);
     const [activeAlert, setActiveAlert] = useState(null);
     const [highlightedGuardId, setHighlightedGuardId] = useState(null);
     const [toast, setToast] = useState({ show: false, message: '' });
     const mapInstanceRef = useRef(null);
+
+    // --- Socket & Alert Logic ---
+    React.useEffect(() => {
+        // Fetch initial alerts
+        fetch('http://localhost:3000/api/alerts')
+            .then(res => res.json())
+            .then(data => {
+                // Map backend alert format to frontend format if needed
+                const mappedAlerts = data.map(a => ({
+                    id: a.alertId,
+                    type: a.type === 'sos' ? 'Medical Assistance' : 'Crowd Alert', // Map types
+                    icon: a.type === 'sos' ? '🚑' : '👥',
+                    loc: `Lane ${a.receiverId}`,
+                    lat: a.location?.lat || 20.8880,
+                    lon: a.location?.lng || 70.4010,
+                    desc: a.reason || 'Emergency reported',
+                    status: a.status
+                }));
+                setAlerts(prev => [...prev, ...mappedAlerts]);
+            })
+            .catch(err => console.error('Error fetching alerts:', err));
+
+        const socket = io('http://localhost:3000');
+
+        socket.on('alert', (newAlert) => {
+            console.log('🚨 New Alert Received:', newAlert);
+            const mappedAlert = {
+                id: newAlert.alert_id,
+                type: newAlert.alert_type === 'sos' ? 'Medical Assistance' : 'Crowd Alert',
+                icon: newAlert.alert_type === 'sos' ? '🚑' : '👥',
+                loc: `Lane ${newAlert.receiver_id}`,
+                lat: newAlert.x || 20.8880,
+                lon: newAlert.y || 70.4010,
+                desc: newAlert.reason || 'Emergency reported',
+                status: 'new'
+            };
+
+            setAlerts(prev => [mappedAlert, ...prev]);
+            setToast({ show: true, message: `🚨 New Alert: ${mappedAlert.type} at ${mappedAlert.loc}` });
+
+            // Play Sound
+            const audio = new Audio('/alert.mp3'); // Ensure this file exists or use a CDN
+            audio.play().catch(e => console.log('Audio play failed', e));
+        });
+
+        socket.on('alert_status', (update) => {
+            setAlerts(prev => prev.map(a => a.id === update.alert_id ? { ...a, status: update.status } : a));
+        });
+
+        return () => socket.disconnect();
+    }, []);
 
     const handleLogout = () => {
         if (window.confirm("Are you sure you want to logout?")) {
@@ -78,10 +126,19 @@ const AdminDashboard = () => {
             }
 
             setHighlightedGuardId(nearest.id);
-            setToast({ show: true, message: `✅ ${nearest.name} dispatched to ${activeAlert.loc}` });
-
-
+            setToast({ show: true, message: `✅ ${nearest.name} dispatched to ${activeAlert.loc} (Location Sent)` });
             setGuards(prev => prev.map(g => g.id === nearest.id ? { ...g, status: 'Busy' } : g));
+
+            // Call Backend to Resolve Alert
+            fetch(`http://localhost:3000/api/alerts/${activeAlert.id}/resolve`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    console.log('Alert resolved:', data);
+                    // Remove from local state
+                    setAlerts(prev => prev.filter(a => a.id !== activeAlert.id));
+                    setActiveAlert(null);
+                })
+                .catch(err => console.error('Error resolving alert:', err));
 
         } else {
             alert("No available guard teams nearby!");

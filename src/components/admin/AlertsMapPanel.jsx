@@ -10,19 +10,19 @@ const AlertsMapPanel = ({ alerts, guards, onAlertClick, activeAlertId, onMapRead
     useEffect(() => {
         if (!mapRef.current) return;
 
-        const CENTER_COORDS = [20.8881, 70.4012];
+        const CENTER_COORDS = [20.8880, 70.4010]; // Matches MapDashboard
 
         const mapStyleNormal = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-            attribution: 'Lumine', maxZoom: 21
+            attribution: 'Lumine', maxZoom: 22
         });
         const mapStyleSatellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: 'Tiles &copy; Esri', maxZoom: 21
+            attribution: 'Tiles &copy; Esri', maxZoom: 22
         });
 
         const map = L.map(mapRef.current, {
             zoomControl: true,
             layers: [mapStyleNormal]
-        }).setView(CENTER_COORDS, 18);
+        }).setView(CENTER_COORDS, 19); // Matches MapDashboard zoom
 
         mapInstanceRef.current = map;
 
