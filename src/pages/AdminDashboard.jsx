@@ -129,16 +129,20 @@ const AdminDashboard = () => {
             setToast({ show: true, message: `✅ ${nearest.name} dispatched to ${activeAlert.loc} (Location Sent)` });
             setGuards(prev => prev.map(g => g.id === nearest.id ? { ...g, status: 'Busy' } : g));
 
-            // Call Backend to Resolve Alert
-            fetch(`http://localhost:3000/api/alerts/${activeAlert.id}/resolve`, { method: 'POST' })
+            // Call Backend to Assign Alert
+            fetch(`http://localhost:3000/api/alerts/${activeAlert.id}/assign`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ guardId: nearest.id, guardName: nearest.name })
+            })
                 .then(res => res.json())
                 .then(data => {
-                    console.log('Alert resolved:', data);
-                    // Remove from local state
-                    setAlerts(prev => prev.filter(a => a.id !== activeAlert.id));
+                    console.log('Alert assigned:', data);
+                    // Update local state to show as assigned (optional: change color/icon)
+                    setAlerts(prev => prev.map(a => a.id === activeAlert.id ? { ...a, status: 'assigned' } : a));
                     setActiveAlert(null);
                 })
-                .catch(err => console.error('Error resolving alert:', err));
+                .catch(err => console.error('Error assigning alert:', err));
 
         } else {
             alert("No available guard teams nearby!");

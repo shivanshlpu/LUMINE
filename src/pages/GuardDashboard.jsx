@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { io } from 'socket.io-client';
 import '../styles/guard-dashboard.css';
 
 const GuardDashboard = () => {
@@ -13,6 +14,34 @@ const GuardDashboard = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [outcome, setOutcome] = useState('');
     const [reportText, setReportText] = useState('');
+
+    const [socket, setSocket] = useState(null);
+
+    useEffect(() => {
+        // Socket Connection
+        const newSocket = io('http://localhost:3000');
+        setSocket(newSocket);
+
+        newSocket.on('connect', () => {
+            console.log('✅ Guard Dashboard Connected to Socket');
+        });
+
+        newSocket.on('task_assigned', (task) => {
+            console.log('🔥 Task Assigned:', task);
+            // Check if task is for THIS guard (Mock ID check or assume all for demo)
+            // For demo, we accept all tasks or check against a hardcoded ID
+            // if (task.guardId === 'MY_GUARD_ID') ... 
+
+            if (task) {
+                setCurrentTask(task);
+                setTaskState('active');
+                setShowToast(true);
+                setIsTimerRunning(true);
+            }
+        });
+
+        return () => newSocket.disconnect();
+    }, []);
 
     useEffect(() => {
         let interval = null;
@@ -32,28 +61,7 @@ const GuardDashboard = () => {
         return `${m}:${s}`;
     };
 
-    const triggerMockTask = () => {
-        const newTask = {
-            id: Math.floor(Math.random() * 1000) + 4000,
-            type: 'weapon',
-            title: 'Weapon Detected',
-            location: 'Gate 3 - Security Checkpoint',
-            desc: 'AI Confidence 92%. Object resembling tactical knife detected in Sidebag.',
-            instruction: 'Approach subject with caution. Verify bag contents. Do not engage alone.',
-            status: 'new'
-        };
-        setCurrentTask(newTask);
-        setTaskState('active');
-        setShowToast(true);
-        setIsTimerRunning(true);
-    };
-
-    useEffect(() => {
-        const timeout = setTimeout(() => {
-            triggerMockTask();
-        }, 3000);
-        return () => clearTimeout(timeout);
-    }, []);
+    // Removed mock triggerMockTask useEffect
 
     const handleLogout = () => {
         sessionStorage.removeItem('lumine_token');
@@ -72,13 +80,30 @@ const GuardDashboard = () => {
         setReportText('');
     };
 
-    const submitResolution = () => {
-        setIsModalOpen(false);
-        setIsTimerRunning(false);
-        setTimer(0);
-        setTaskState('idle');
-        setCurrentTask(null);
-        alert(`Report Submitted Successfully. Task closed.`);
+    const submitResolution = async () => {
+        if (!currentTask) return;
+
+        try {
+            const response = await fetch(`http://localhost:3000/api/alerts/${currentTask.id}/resolve`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ outcome, report: reportText })
+            });
+
+            if (response.ok) {
+                setIsModalOpen(false);
+                setIsTimerRunning(false);
+                setTimer(0);
+                setTaskState('idle');
+                setCurrentTask(null);
+                alert(`Report Submitted Successfully. Task closed.`);
+            } else {
+                alert('Failed to resolve task on server.');
+            }
+        } catch (error) {
+            console.error('Error resolving task:', error);
+            alert('Error resolving task.');
+        }
     };
 
     return (
@@ -158,7 +183,7 @@ const GuardDashboard = () => {
 
                                             <div className="p-3 bg-blue-50 rounded-lg border border-blue-100 text-sm text-blue-800">
                                                 <i className="fas fa-info-circle mr-1"></i>
-                                                <strong>Instruction:</strong> <span>{currentTask?.instruction.substring(0, 60)}...</span>
+                                                <strong>Instruction:</strong> <span>{currentTask?.instruction?.substring(0, 60)}...</span>
                                             </div>
 
                                             <button onClick={openResolveModal} className="btn-action btn-success mt-auto shadow-lg shadow-green-200">
@@ -214,7 +239,7 @@ const GuardDashboard = () => {
                                         </div>
                                         <h2 className="text-xl font-bold text-gray-800">All Systems Normal</h2>
                                         <p className="text-gray-500 mt-2 max-w-xs">You are currently visible on the Admin Grid. Stay alert.</p>
-                                        <button onClick={triggerMockTask} className="mt-8 text-xs text-gray-300 hover:text-gray-400 underline">Dev: Sim New Task</button>
+
                                     </div>
                                 )}
 
@@ -397,4 +422,43 @@ const GuardDashboard = () => {
     );
 };
 
-export default GuardDashboard;
+class ErrorBoundary extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = { hasError: false, error: null, errorInfo: null };
+    }
+
+    static getDerivedStateFromError(error) {
+        return { hasError: true };
+    }
+
+    componentDidCatch(error, errorInfo) {
+        this.setState({ error, errorInfo });
+        console.error("GuardDashboard Error:", error, errorInfo);
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div className="p-10 text-red-600">
+                    <h1 className="text-2xl font-bold">Something went wrong.</h1>
+                    <pre className="mt-4 bg-gray-100 p-4 rounded text-sm overflow-auto">
+                        {this.state.error && this.state.error.toString()}
+                        <br />
+                        {this.state.errorInfo && this.state.errorInfo.componentStack}
+                    </pre>
+                </div>
+            );
+        }
+
+        return this.props.children;
+    }
+}
+
+export default function GuardDashboardWithBoundary() {
+    return (
+        <ErrorBoundary>
+            <GuardDashboard />
+        </ErrorBoundary>
+    );
+}

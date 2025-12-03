@@ -19,6 +19,11 @@ const LaneSchema = new mongoose.Schema({
         enum: ['GREEN', 'YELLOW', 'RED', 'unplaced'], // Added 'unplaced'
         default: 'unplaced'
     },
+    gateStatus: {
+        type: String,
+        enum: ['OPEN', 'CLOSED'],
+        default: 'OPEN'
+    },
     isSos: { type: Boolean, default: false },
     lastUpdated: {
         type: Date,

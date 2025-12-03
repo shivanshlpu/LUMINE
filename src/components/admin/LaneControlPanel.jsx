@@ -15,7 +15,8 @@ const LaneControlPanel = () => {
                     .filter(l => !isNaN(l.laneId))
                     .map(lane => ({
                         id: lane.laneId,
-                        state: lane.status === 'RED' ? 'closed' : (lane.status === 'YELLOW' ? 'busy' : 'open')
+                        state: lane.gateStatus === 'CLOSED' ? 'closed' : 'open', // Use gateStatus
+                        crowdStatus: lane.status // Keep crowd status for reference if needed
                     }));
                 setLanes(formattedLanes);
             } catch (error) {
@@ -32,7 +33,8 @@ const LaneControlPanel = () => {
                 if (lane.id == updatedLane.laneId) {
                     return {
                         ...lane,
-                        state: updatedLane.status === 'RED' ? 'closed' : (updatedLane.status === 'YELLOW' ? 'busy' : 'open')
+                        state: updatedLane.gateStatus === 'CLOSED' ? 'closed' : 'open',
+                        crowdStatus: updatedLane.status
                     };
                 }
                 return lane;
@@ -42,10 +44,26 @@ const LaneControlPanel = () => {
         return () => socket.disconnect();
     }, []);
 
-    const toggleLane = (index) => {
-        // Toggle logic disabled as status comes from backend
-        // In a real app, this would send a POST request to update status
-        console.log('Toggle disabled in live mode');
+    const toggleLane = async (index) => {
+        const lane = lanes[index];
+        const newAction = lane.state === 'open' ? 'CLOSED' : 'OPEN';
+
+        try {
+            const response = await fetch(`http://localhost:3000/api/lanes/${lane.id}/gate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: newAction })
+            });
+
+            if (!response.ok) throw new Error('Failed to toggle gate');
+
+            // Optimistic update (optional, but socket will handle it)
+            console.log(`Toggled Lane ${lane.id} to ${newAction}`);
+
+        } catch (error) {
+            console.error('Error toggling lane:', error);
+            alert('Failed to update gate status');
+        }
     };
 
     return (
@@ -59,6 +77,7 @@ const LaneControlPanel = () => {
                         key={lane.id}
                         className={`lane-btn ${lane.state}`}
                         onClick={() => toggleLane(index)}
+                        style={{ cursor: 'pointer' }}
                     >
                         <h5>L-{lane.id}</h5>
                         <span>{lane.state.toUpperCase()}</span>

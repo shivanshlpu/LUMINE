@@ -72,7 +72,7 @@ app.get('/api/lanes', async (req, res) => {
 // 3. Get Lane Status (Specific for Dashboard)
 app.get('/api/lane-status', async (req, res) => {
     try {
-        const lanes = await Lane.find({}, { laneId: 1, status: 1, temperature: 1, humidity: 1, lastUpdated: 1 }).sort({ laneId: 1 });
+        const lanes = await Lane.find({}, { laneId: 1, status: 1, gateStatus: 1, temperature: 1, humidity: 1, lastUpdated: 1 }).sort({ laneId: 1 });
         res.json(lanes);
     } catch (err) {
         res.status(500).json({ error: 'Internal Server Error' });
@@ -231,6 +231,12 @@ const handleSensorUpdate = async (req, res) => {
                 lastUpdated: new Date()
             };
 
+            // AUTO-CLOSE LOGIC: If status is RED, force gate to CLOSED
+            if (status === 'RED') {
+                updateData.gateStatus = 'CLOSED';
+                console.log(`🔒 Auto-Closing Gate for Lane ${normalizedLaneId} due to RED status.`);
+            }
+
             // Update location if provided
             if (receiver_coord) {
                 updateData.location = { lat: receiver_coord.x, lng: receiver_coord.y };
@@ -265,6 +271,32 @@ app.post('/api/lanes/update-sensor', handleSensorUpdate);
 app.post('/api/sensor-data', handleSensorUpdate);
 app.post('/api/v1/detections', handleSensorUpdate); // Alias for new requirement
 app.post('/api/v1/alerts', handleSensorUpdate); // Alias for new requirement
+
+// 7. Toggle Gate Status (Manual Control)
+app.post('/api/lanes/:id/gate', async (req, res) => {
+    try {
+        const { action } = req.body; // 'OPEN' or 'CLOSED'
+        if (!['OPEN', 'CLOSED'].includes(action)) {
+            return res.status(400).json({ error: 'Invalid action. Use OPEN or CLOSED.' });
+        }
+
+        const lane = await Lane.findOneAndUpdate(
+            { laneId: req.params.id },
+            { gateStatus: action },
+            { new: true }
+        );
+
+        if (lane) {
+            io.emit('lane-update', lane);
+            console.log(`🔓 Manual Gate Control: Lane ${req.params.id} set to ${action}`);
+            res.json(lane);
+        } else {
+            res.status(404).json({ error: 'Lane not found' });
+        }
+    } catch (err) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
 
 // 6. Aggregated Heatmap Data (New Endpoint)
 app.get('/api/heatmap/aggregated', async (req, res) => {
@@ -307,6 +339,36 @@ app.post('/api/alerts/:id/ack', async (req, res) => {
         );
         if (alert) {
             io.emit('alert_status', { alert_id: alert.alertId, status: 'acknowledged' });
+            res.json(alert);
+        } else {
+            res.status(404).json({ error: 'Alert not found' });
+        }
+    } catch (err) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+app.post('/api/alerts/:id/assign', async (req, res) => {
+    try {
+        const { guardId, guardName } = req.body;
+        const alert = await Alert.findOneAndUpdate(
+            { alertId: req.params.id },
+            { status: 'assigned', assignedTo: guardId, assignedToName: guardName },
+            { new: true }
+        );
+        if (alert) {
+            io.emit('alert_status', { alert_id: alert.alertId, status: 'assigned', guardId });
+            // Emit specific event for the guard
+            io.emit('task_assigned', {
+                id: alert.alertId,
+                type: alert.type,
+                title: `${alert.type.toUpperCase()} Alert`,
+                location: `${alert.location.lat}, ${alert.location.lng}`,
+                desc: alert.reason,
+                instruction: 'Proceed to location immediately.',
+                status: 'assigned',
+                guardId: guardId
+            });
             res.json(alert);
         } else {
             res.status(404).json({ error: 'Alert not found' });

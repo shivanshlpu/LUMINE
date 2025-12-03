@@ -42,6 +42,7 @@ const AdminLaneControl = () => {
                                 throughput: 0,
                                 lastMove: apiLane.lastUpdated || Date.now(),
                                 status: apiLane.status === 'RED' ? 'STUCK' : (apiLane.status === 'YELLOW' ? 'BUSY' : 'OPEN'),
+                                gateStatus: apiLane.gateStatus || 'OPEN', // Add gateStatus
                                 manualOverride: false,
                                 temp: apiLane.temperature || '--',
                                 humidity: apiLane.humidity || '--',
@@ -77,6 +78,7 @@ const AdminLaneControl = () => {
                             temp: updatedLane.temperature || lane.temp,
                             humidity: updatedLane.humidity || lane.humidity,
                             status: !lane.manualOverride ? newStatus : lane.status,
+                            gateStatus: updatedLane.gateStatus || lane.gateStatus, // Update gateStatus
                             lastMove: new Date()
                         };
                     }
@@ -158,6 +160,24 @@ const AdminLaneControl = () => {
         }));
     };
 
+    // New Function to Toggle Gate
+    const handleGateToggle = async (laneId, action) => {
+        try {
+            const response = await fetch(`http://localhost:3000/api/lanes/${laneId}/gate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action })
+            });
+
+            if (!response.ok) throw new Error('Failed to toggle gate');
+
+            showToast(`Gate ${action} for Lane ${laneId}`);
+        } catch (error) {
+            console.error('Error toggling gate:', error);
+            showToast('Failed to update gate', true);
+        }
+    };
+
     const handleGuardAssignConfirm = () => {
         showToast(`Alpha Team dispatched to ${activeGuardLane.name}`);
         setActiveGuardLane(null);
@@ -192,6 +212,7 @@ const AdminLaneControl = () => {
                             key={lane.id}
                             lane={lane}
                             onStatusChange={handleStatusChange}
+                            onGateToggle={handleGateToggle} // Pass new toggle function
                             onOpenCam={setActiveCamLane}
                             onAssignGuard={setActiveGuardLane}
                         />

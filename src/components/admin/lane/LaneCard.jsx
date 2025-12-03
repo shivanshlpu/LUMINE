@@ -1,6 +1,6 @@
 import React from 'react';
 
-const LaneCard = ({ lane, onStatusChange, onOpenCam, onAssignGuard }) => {
+const LaneCard = ({ lane, onStatusChange, onGateToggle, onOpenCam, onAssignGuard }) => {
 
     const getStatusColor = (status, percentage) => {
         if (status === 'STUCK') return '#E53E3E';
@@ -89,9 +89,9 @@ const LaneCard = ({ lane, onStatusChange, onOpenCam, onAssignGuard }) => {
             </div>
 
             <div className="flex gap-1 mb-4 bg-gray-50 p-1 rounded-md justify-between">
-                <button onClick={() => onStatusChange(lane.id, 'OPEN')} className={`status-btn btn-open ${!lane.manualOverride || lane.status === 'OPEN' ? 'active' : ''} flex-1`}>OPEN</button>
+                <button onClick={() => onGateToggle(lane.id, 'OPEN')} className={`status-btn btn-open ${lane.gateStatus === 'OPEN' ? 'active' : ''} flex-1`}>OPEN</button>
                 <button onClick={() => onStatusChange(lane.id, 'BUSY')} className={`status-btn btn-busy ${lane.status === 'BUSY' ? 'active' : ''} flex-1`}>BUSY</button>
-                <button onClick={() => onStatusChange(lane.id, 'CLOSED')} className={`status-btn btn-close ${lane.status === 'CLOSED' ? 'active' : ''} flex-1`}>BLOCK</button>
+                <button onClick={() => onGateToggle(lane.id, 'CLOSED')} className={`status-btn btn-close ${lane.gateStatus === 'CLOSED' ? 'active' : ''} flex-1`}>BLOCK</button>
             </div>
 
             <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 mb-4">
